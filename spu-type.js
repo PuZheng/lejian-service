@@ -5,14 +5,13 @@ var models = require('./models.js');
 
 router.get('/list.json', function *(next) {
     var c = (yield models.SPUType.fetchAll());
-    var spuCnts = (yield c.map(function (spuType) {
+    var data = (yield c.map(function (spuType) {
         var json = spuType.toJSON();
-        return spuType.getSpuCnt();
+        return function *() {
+            json.spuType = yield spuType.getSpuCnt();
+            return json;
+        };
     }));
-    var data = c.toJSON().map(function (i, idx) {
-        i.spuCnt = spuCnts[idx];
-        return i;
-    });
      
     this.body = {
         data: data,
