@@ -14,6 +14,11 @@ var SPUType = bookshelf.Model.extend({
         };
         return ret;
     },
+    getSpuCnt: function () {
+        return new Promise(function (resolve, reject) {
+            resolve(10);
+        });
+    }
 });
 
 module.exports = {

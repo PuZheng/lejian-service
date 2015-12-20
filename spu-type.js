@@ -4,8 +4,18 @@ var json = require('koa-json');
 var models = require('./models.js');
 
 router.get('/list.json', function *(next) {
+    var c = (yield models.SPUType.fetchAll());
+    var spuCnts = (yield c.map(function (spuType) {
+        var json = spuType.toJSON();
+        return spuType.getSpuCnt();
+    }));
+    var data = c.toJSON().map(function (i, idx) {
+        i.spuCnt = spuCnts[idx];
+        return i;
+    });
+     
     this.body = {
-        data: (yield models.SPUType.fetchAll()).toJSON(),
+        data: data,
     };
     yield next;
 });
