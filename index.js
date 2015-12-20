@@ -18,6 +18,7 @@ if (require.main === module) {
         // and all requests longer than specified time will have level 'warn'
         timeLimit: 100
     }))
+    .use(mount('/assets', require('./assets.js').app))
     .use(mount('/spu-type', require('./spu-type.js').app));
     app.listen(config.get('port'));
 }
