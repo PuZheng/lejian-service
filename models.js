@@ -3,6 +3,7 @@ var bookshelf = require('bookshelf')(knex);
 var casing = require('casing');
 var urljoin = require('url-join');
 var config = require('./config.js');
+var bcrypt = require('bcrypt');
 
 var SPUType = bookshelf.Model.extend({
     tableName: 'TB_SPU_TYPE',

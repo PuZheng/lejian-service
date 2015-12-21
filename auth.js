@@ -29,5 +29,6 @@ router.post('/login', koaBody, function *(next) {
     }
 });
 
-module.exports = koa().use(router.routes())
-.use(router.allowedMethods());
+module.exports = {
+    app: koa().use(router.routes()).use(router.allowedMethods())
+};
