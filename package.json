@@ -17,11 +17,13 @@
   },
   "homepage": "https://github.com/PuZheng/lejian-service#readme",
   "dependencies": {
+    "bcrypt": "^0.8.5",
     "bookshelf": "^0.9.1",
     "bunyan": "^1.5.1",
     "casing": "^1.0.0",
     "co": "^4.6.0",
     "co-mkdirp": "^0.1.0",
+    "co-stream": "^0.1.0",
     "convict": "^1.0.2",
     "gm": "^1.21.1",
     "knex": "^0.9.0",

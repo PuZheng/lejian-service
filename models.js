@@ -21,6 +21,41 @@ var SPUType = bookshelf.Model.extend({
     }
 });
 
+
+var User = bookshelf.Model.extend({
+    tableName: 'TB_USER',
+    role: function () {
+        return this.belongsTo(Role, 'role_id');
+    },
+    serialize: function () {
+        var ret = casing.camelize(bookshelf.Model.prototype.serialize.apply(this));
+        return ret;
+    },
+}, {
+    login: function (email, password) {
+        if (!email || !password) {
+            var err = new Error('请输入用户邮箱或者密码');
+            err.code = 'MISS_FIELDS';
+            throw err;
+        }
+
+        return new this({email: email.toLowerCase().trim()}).fetch().tap(function(user) {
+            return new Promise(function (resolve, reject) {
+                return bcrypt.compare(password, user.get('password'), function (error, same) {
+                    if (!same) {
+                        reject(new Error('incorrect email or password'));
+                    } else {
+                        resolve(user);
+                    }
+                });
+            });
+        }).catch(function (err) {
+            throw new Error('incorrect email or password');
+        });
+    }
+});
+
 module.exports = {
     SPUType: SPUType,
+    User: User,
 };

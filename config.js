@@ -27,6 +27,16 @@ var conf = convict({
         },
         env: "KNEX_OPTS",
     },
+    admin: {
+        doc: 'system admin account information',
+        format: function (val) {
+
+        },
+        default: {
+            email: 'admin@lejian.com',
+            password: 'admin'
+        }
+    },
     assetDir: {
         doc: 'where assets resides',
         format: String,

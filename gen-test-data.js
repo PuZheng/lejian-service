@@ -9,12 +9,15 @@ var mkdirp = require('co-mkdirp');
 var path = require('path');
 var conf = require('./config.js');
 var fakeImage = require('./fake-image.js');
+var cs = require('co-stream');
+var setupAdmin = require('./setup-admin.js');
 
 if (require.main === module) {
     var knex = require('./knex.js');
     co(function *() {
         'use strict';
         yield initDB(knex);
+        yield setupAdmin(knex);
         logger.info('creating spu types');
         var dir = path.join(conf.get('assetDir'), 'spu_type_pics');
         if (!(yield fs.exists(dir))) {
@@ -25,11 +28,12 @@ if (require.main === module) {
             var picPath = path.join(dir, name + '.jpg');
             var ws = fs.createWriteStream(picPath);
             fakeImage(name).pipe(ws);
-            yield new Promise(function (resolve, reject) {
-                ws.on('close', function () {
-                    resolve();
-                });
-            });
+            yield *cs.wait(ws);
+            // yield new Promise(function (resolve, reject) {
+            //     ws.on('close', function () {
+            //         resolve();
+            //     });
+            // });
             yield knex.insert({
                 name: name,
                 enabled: true,
