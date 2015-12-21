@@ -19,6 +19,7 @@ if (require.main === module) {
         timeLimit: 100
     }))
     .use(mount('/assets', require('./assets.js').app))
+    .use(mount('/auth', require('./auth.js').app))
     .use(mount('/spu-type', require('./spu-type.js').app));
     app.listen(config.get('port'));
 }

@@ -38,7 +38,17 @@ var conf = convict({
         format: 'url',
         default: 'http://127.0.0.1:5000',
         env: 'WEB_SITE'
-    }
+    },
+    privateKey: {
+        doc: 'private key',
+        format: String,
+        default: "private.pem",
+    },
+    publicKey: {
+        doc: 'public key',
+        format: String,
+        default: "public.pem",
+    },
 });
 
 // Load environment dependent configuration 

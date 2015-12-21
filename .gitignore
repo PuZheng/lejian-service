@@ -45,3 +45,5 @@ Session.vim
 
 assets/
 db
+private.pem 
+public.pem
