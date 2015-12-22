@@ -59,6 +59,12 @@ var conf = convict({
         format: String,
         default: "public.pem",
     },
+    jwtEnabled: {
+        doc: 'is jwt enabled?',
+        format: Boolean,
+        default: true,
+        env: 'JWT_ENABLED'
+    }
 });
 
 // Load environment dependent configuration 

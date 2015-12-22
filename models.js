@@ -22,7 +22,6 @@ var SPUType = bookshelf.Model.extend({
     }
 });
 
-
 var User = bookshelf.Model.extend({
     tableName: 'TB_USER',
     role: function () {
@@ -41,6 +40,9 @@ var User = bookshelf.Model.extend({
         }
 
         return new this({email: email.toLowerCase().trim()}).fetch().tap(function(user) {
+            if (!user) {
+                throw new Error('incorrect email or password');
+            }
             return new Promise(function (resolve, reject) {
                 return bcrypt.compare(password, user.get('password'), function (error, same) {
                     if (!same) {
@@ -50,8 +52,6 @@ var User = bookshelf.Model.extend({
                     }
                 });
             });
-        }).catch(function (err) {
-            throw new Error('incorrect email or password');
         });
     }
 });

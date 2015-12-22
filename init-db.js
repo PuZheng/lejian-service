@@ -9,7 +9,6 @@ var initDB = function (knex) {
         table.timestamp('created_at').defaultTo(knex.fn.now());
     }).createTable('TB_USER', function (table) {
         table.increments();
-        table.string('name').unique();
         table.string('email').unique();
         table.string('password');
         table.string('role');
