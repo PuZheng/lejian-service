@@ -8,10 +8,6 @@ var mount = require('koa-mount');
 var fs = require('fs');
 var jwt = require('koa-jwt');
 
-if (config.get('jwtEnabled')) {
-    console.log('ok');
-}
-
 if (require.main === module) {
     fs.readFile(config.get('publicKey'), function (err, secret) {
         var app = koa();
