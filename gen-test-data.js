@@ -29,11 +29,6 @@ if (require.main === module) {
             var ws = fs.createWriteStream(picPath);
             fakeImage(name).pipe(ws);
             yield *cs.wait(ws);
-            // yield new Promise(function (resolve, reject) {
-            //     ws.on('close', function () {
-            //         resolve();
-            //     });
-            // });
             yield knex.insert({
                 name: name,
                 enabled: true,
