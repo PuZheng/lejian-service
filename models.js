@@ -41,12 +41,12 @@ var User = bookshelf.Model.extend({
 
         return new this({email: email.toLowerCase().trim()}).fetch().tap(function(user) {
             if (!user) {
-                throw new Error('incorrect email or password');
+                throw new Error('错误的邮箱者密码');
             }
             return new Promise(function (resolve, reject) {
                 return bcrypt.compare(password, user.get('password'), function (error, same) {
                     if (!same) {
-                        reject(new Error('incorrect email or password'));
+                        reject(new Error('错误的邮箱或者密码'));
                     } else {
                         resolve(user);
                     }
