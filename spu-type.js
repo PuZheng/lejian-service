@@ -8,6 +8,7 @@ var utils = require('./utils.js');
 var path = require('path');
 var config = require('./config.js');
 var fs = require('mz/fs');
+var logger = require('./logger.js');
 
 router.get('/list', function *(next) {
     var c = (yield models.SPUType.fetchAll());
@@ -50,10 +51,37 @@ router.get('/list', function *(next) {
     }
     this.body = item.toJSON();
 }).get('/object/:id', function *(next) {
-    var spuType = yield models.SPUType.forge({ id: this.params.id }).fetch();
-    var spuCnt = yield spuType.getSpuCnt();
-    this.body = spuType.toJSON();
-    this.body.spuCnt = spuCnt;
+    try {
+        var spuType = yield models.SPUType.forge({ id: this.params.id }).fetch({ require: true });
+        var spuCnt = yield spuType.getSpuCnt();
+        this.body = spuType.toJSON();
+        this.body.spuCnt = spuCnt;
+    } catch (e) {
+        if (e.message != 'EmptyResponse') {
+            throw e;
+        }
+        this.status = 404;
+    }
+}).put('/object/:id', koaBody, function *(next) {
+    try {
+        var spuType = yield models.SPUType.forge({ id: this.params.id }).fetch({ require: true });
+        var picPath = this.request.body.picPath;
+        if (picPath) {
+            delete this.request.body.picPath;
+        }
+        spuType = yield spuType.save(casing.snakeize(this.request.body));
+        if (picPath) {
+            yield fs.rename(picPath, path.join(config.get('assetDir'), 'spu_type_pics', 
+                                               spuType.get('id') + '.jpg'));
+        }
+        this.body = spuType.toJSON();
+        this.body.spuCnt = yield spuType.getSpuCnt();
+    } catch (e) {
+        if (e.message != 'EmptyResponse') {
+            throw e;
+        }
+        this.status = 404;
+    }
 });
 
 
@@ -62,3 +90,4 @@ module.exports = {
     .use(router.routes())
     .use(router.allowedMethods())
 };
+
