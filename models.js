@@ -18,7 +18,7 @@ var SPUType = bookshelf.Model.extend({
         return ret;
     },
     getPicPath: function () {
-        return path.join(config.get('assetDir'), 'spu_type_pics', '' + this.get('id'));
+        return path.join(config.get('assetDir'), 'spu_type_pics', this.get('id') + '.jpg');
     },
     getSpuCnt: function () {
         return new Promise(function (resolve, reject) {
