@@ -4,16 +4,21 @@ var casing = require('casing');
 var urljoin = require('url-join');
 var config = require('./config.js');
 var bcrypt = require('bcrypt');
+var path = require('path');
 
 var SPUType = bookshelf.Model.extend({
     tableName: 'TB_SPU_TYPE',
     serialize: function () {
         var ret = casing.camelize(bookshelf.Model.prototype.serialize.apply(this));
+        ret.picPath = this.getPicPath();
         ret.pic = {
             path: ret.picPath,
             url: urljoin(config.get('site'), ret.picPath),
         };
         return ret;
+    },
+    getPicPath: function () {
+        return path.join(config.get('assetDir'), 'spu_type_pics', '' + this.get('id'));
     },
     getSpuCnt: function () {
         return new Promise(function (resolve, reject) {
