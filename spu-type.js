@@ -9,7 +9,7 @@ var path = require('path');
 var config = require('./config.js');
 var fs = require('mz/fs');
 
-router.get('/list.json', function *(next) {
+router.get('/list', function *(next) {
     var c = (yield models.SPUType.fetchAll());
     var data = (yield c.map(function (spuType) {
         var json = spuType.toJSON();
@@ -23,7 +23,7 @@ router.get('/list.json', function *(next) {
         data: data,
     };
     yield next;
-}).post('/object.json', koaBody, function *(next) {
+}).post('/object', koaBody, function *(next) {
     var picPath = this.request.body.picPath;
     if (picPath) {
         delete this.request.body.picPath;
@@ -49,6 +49,11 @@ router.get('/list.json', function *(next) {
         yield fs.rename(picPath, path.join(dir, item.get('id') + '.jpg'));
     }
     this.body = item.toJSON();
+}).get('/object/:id', function *(next) {
+    var spuType = yield models.SPUType.forge({ id: this.params.id }).fetch();
+    var spuCnt = yield spuType.getSpuCnt();
+    this.body = spuType.toJSON();
+    this.body.spuCnt = spuCnt;
 });
 
 
