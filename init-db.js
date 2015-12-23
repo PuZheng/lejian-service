@@ -19,7 +19,7 @@ var initDB = function (knex) {
         table.float('msrp').notNullable();
         table.integer('vendor_id').notNullable().references('TB_VENDOR.id');
         table.integer('spu_type_id').notNullable().references('TB_SPU_TYPE.id');
-        table.float('rating');
+        table.integer('rating');
         table.timestamp('created_at').defaultTo(knex.fn.now());
         table.boolean('enabled');
         table.string('desc', 256);
