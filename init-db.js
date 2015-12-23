@@ -5,7 +5,6 @@ var initDB = function (knex) {
         table.string('name').unique();
         table.integer('weight');
         table.boolean('enabled');
-        table.string('pic_path');
         table.timestamp('created_at').defaultTo(knex.fn.now());
     }).createTable('TB_USER', function (table) {
         table.increments();

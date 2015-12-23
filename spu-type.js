@@ -6,6 +6,8 @@ var koaBody = require('koa-body')();
 var casing = require('casing');
 var utils = require('./utils.js');
 var path = require('path');
+var config = require('./config.js');
+var fs = require('mz/fs');
 
 router.get('/list.json', function *(next) {
     var c = (yield models.SPUType.fetchAll());
@@ -21,14 +23,32 @@ router.get('/list.json', function *(next) {
         data: data,
     };
     yield next;
-}).put('/object.json', koaBody, function *(next) {
-    var picPath = request.body.picPath;
+}).post('/object.json', koaBody, function *(next) {
+    var picPath = this.request.body.picPath;
+    if (picPath) {
+        delete this.request.body.picPath;
+    }
+    var item;
+    try {
+        item = yield models.SPUType.forge(casing.snakeize(this.request.body)).save();
+    } catch (e) {
+        if (e.code === 'SQLITE_CONSTRAINT') {
+            e.message = '名称已经存在';
+            this.status = 403;
+            this.body = {
+                code: e.code,
+                message: e.message,
+            };
+            return;
+        }
+        throw e;
+    }
     if (picPath) {
         dir = path.join(config.get('assetDir'), 'spu_type_pics');
         yield utils.assertDir(dir);
-        request.body.picPath = yield utils.formalizeTempAsset(dir, picPath);
+        yield fs.rename(picPath, path.join(dir, '' + item.get('id')));
     }
-    this.body = (yield models.SPUType.forge(casing.snakeize(request.body)).save()).toJSON();
+    this.body = item.toJSON();
 });
 
 

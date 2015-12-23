@@ -25,16 +25,15 @@ if (require.main === module) {
         }
         for (var i = 0; i < 8; ++i) {
             var name = chance.word();
-            var picPath = path.join(dir, name + '.jpg');
-            var ws = fs.createWriteStream(picPath);
-            fakeImage(name).pipe(ws);
-            yield *cs.wait(ws);
-            yield knex.insert({
+            var id = (yield knex.insert({
                 name: name,
                 enabled: true,
                 weight: chance.integer({ min: 0, max: 5 }),
-                pic_path: picPath,
-            }).into('TB_SPU_TYPE');
+            }).into('TB_SPU_TYPE'));
+            var picPath = path.join(dir, id + '.jpg');
+            var ws = fs.createWriteStream(picPath);
+            fakeImage(name).pipe(ws);
+            yield *cs.wait(ws);
         }
     }).then(function () {
         knex.destroy();
