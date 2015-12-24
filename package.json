@@ -42,6 +42,7 @@
     "lodash": "^3.10.1",
     "mz": "^2.1.0",
     "sqlite3": "^3.1.1",
+    "tmp": "0.0.28",
     "url-join": "0.0.1"
   },
   "devDependencies": {

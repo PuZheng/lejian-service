@@ -11,6 +11,8 @@ var conf = require('./config.js');
 var fakeImage = require('./fake-image.js');
 var cs = require('co-stream');
 var setupAdmin = require('./setup-admin.js');
+var cofy = require('cofy');
+var tmp = require('tmp');
 
 if (require.main === module) {
     var knex = require('./knex.js');
@@ -19,7 +21,7 @@ if (require.main === module) {
         yield initDB(knex);
         yield setupAdmin(knex);
         logger.info('CREATING SPU TYPES');
-        var dir = path.join(conf.get('assetDir'), 'spu_type_pics');
+        let dir = path.join(conf.get('assetDir'), 'spu_type_pics');
         if (!(yield fs.exists(dir))) {
             yield mkdirp(dir);
         }
@@ -54,7 +56,7 @@ if (require.main === module) {
             for (let j = 0; j < chance.integer({ min: 1, max: 16 }); ++j) {
                 let name = chance.word();
                 logger.info('CREATING SPU ' + name);
-                yield knex.insert({
+                let spuId = yield knex.insert({
                     name: name,
                     code: chance.natural() + '',
                     msrp: chance.floating({ min: 1, max: 1000, fixed: 2 }),
@@ -64,6 +66,14 @@ if (require.main === module) {
                     desc: chance.paragraph(),
                     spu_type_id: _.sample(spuTypes).id,
                 }).into('TB_SPU');
+                let dir = path.join(conf.get('assetDir'), 'spu_pics', '' + spuId);
+                yield utils.assertDir(dir);
+                for (let k = 0; k < chance.integer({ min: 1, max: 4 }); ++k) {
+                   let picPath = (yield cofy.fn(tmp.tmpName)({ dir: dir, postfix: '.jpg' }));
+                   let ws = fs.createWriteStream(picPath);
+                   fakeImage(name).pipe(ws);
+                   yield cs.wait(ws);
+                }
             }
         }
     }).then(function () {
