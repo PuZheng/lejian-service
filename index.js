@@ -33,6 +33,7 @@ if (require.main === module) {
         }))
         .use(mount('/assets', require('./assets.js').app))
         .use(mount('/auth', require('./auth.js').app))
+        .use(mount('/spu', require('./spu.js').app))
         .use(mount('/spu-type', require('./spu-type.js').app));
         app.listen(config.get('port'));
     });
