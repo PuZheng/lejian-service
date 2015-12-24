@@ -1,5 +1,6 @@
 var fs = require('mz/fs');
 var path = require('path');
+var mkdirp = require('co-mkdirp');
 
 var assertDir = function *(dir) {
     try {

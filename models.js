@@ -5,6 +5,7 @@ var urljoin = require('url-join');
 var config = require('./config.js');
 var bcrypt = require('bcrypt');
 var path = require('path');
+var walk = require('co-walk');
 
 var SPUType = bookshelf.Model.extend({
     tableName: 'TB_SPU_TYPE',
@@ -21,9 +22,7 @@ var SPUType = bookshelf.Model.extend({
         return path.join(config.get('assetDir'), 'spu_type_pics', this.get('id') + '.jpg');
     },
     getSpuCnt: function () {
-        return new Promise(function (resolve, reject) {
-            resolve(10);
-        });
+        return SPU.where('spu_type_id', this.get('id')).count();
     }
 });
 
@@ -61,7 +60,36 @@ var User = bookshelf.Model.extend({
     }
 });
 
+var SPU = bookshelf.Model.extend({
+    tableName: 'TB_SPU',
+    serialize: function () {
+        return casing.camelize(bookshelf.Model.prototype.serialize.apply(this));
+    },
+    spuType: function () {
+        return this.belongsTo(SPUType, 'spu_type_id');
+    },
+    vendor: function () {
+        return this.belongsTo(Vendor, 'vendor_id');
+    },
+    getPicPaths: function *() {
+        var paths = yield walk(path.join(config.get('assetDir'), 'spu_pics', this.get('id') + ''));
+        var pat = /\.(jpe?g|png)/i;
+        return paths.filter(function (path_) {
+            return pat.test(path.extname(path_));
+        });
+    },
+});
+
+var Vendor = bookshelf.Model.extend({
+    tableName: 'TB_VENDOR',
+    serialize: function () {
+        return casing.camelize(bookshelf.Model.prototype.serialize.apply(this));
+    },
+});
+
 module.exports = {
     SPUType: SPUType,
     User: User,
+    SPU: SPU,
+    Vendor: Vendor
 };

@@ -15,7 +15,7 @@ router.get('/list', function *(next) {
     var data = (yield c.map(function (spuType) {
         var json = spuType.toJSON();
         return function *() {
-            json.spuType = yield spuType.getSpuCnt();
+            json.spuCnt = yield spuType.getSpuCnt();
             return json;
         };
     }));
