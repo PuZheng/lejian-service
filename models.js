@@ -72,10 +72,13 @@ var SPU = bookshelf.Model.extend({
         return this.belongsTo(Vendor, 'vendor_id');
     },
     getPicPaths: function *() {
-        var paths = yield walk(path.join(config.get('assetDir'), 'spu_pics', this.get('id') + ''));
+        var dir = path.join(config.get('assetDir'), 'spu_pics', this.get('id') + '');
+        var paths = yield walk(dir);
         var pat = /\.(jpe?g|png)/i;
         return paths.filter(function (path_) {
             return pat.test(path.extname(path_));
+        }).map(function (path_) {
+            return path.join(dir, path_);
         });
     },
 });

@@ -39,14 +39,17 @@ router.get('/list', function *(next) {
     var data = yield c.map(function (item) {
         return function *fillPicPaths() {
             var picPaths = yield item.getPicPaths();
+            var pics = picPaths.map(function (picPath) {
+                return {
+                    path: picPath,
+                    url: urljoin(config.get('site'), picPath),
+                };
+            });
             return _.assign(item.toJSON(), {
                 picPaths: picPaths,
-                pics: picPaths.map(function (picPath) {
-                    return {
-                        path: picPath,
-                        url: urljoin(config.get('site'), picPath),
-                    };
-                })
+                pics: pics,
+                // TODO this is inappropriate
+                icon: pics[0],
             });
         };
     });
@@ -56,8 +59,5 @@ router.get('/list', function *(next) {
     };
 });
 
-module.exports = {
-    app: koa().use(json())
-    .use(router.routes())
-    .use(router.allowedMethods()),
-};
+exports.app = koa().use(json()).use(router.routes())
+.use(router.allowedMethods());

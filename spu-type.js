@@ -85,9 +85,4 @@ router.get('/list', function *(next) {
 });
 
 
-module.exports = {
-    app: koa().use(json())
-    .use(router.routes())
-    .use(router.allowedMethods())
-};
-
+exports.app = koa().use(json()).use(router.routes()).use(router.allowedMethods());
