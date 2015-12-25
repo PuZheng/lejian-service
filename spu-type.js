@@ -47,7 +47,7 @@ router.get('/list', function *(next) {
     if (picPath) {
         dir = path.join(config.get('assetDir'), 'spu_type_pics');
         yield utils.assertDir(dir);
-        yield fs.rename(picPath, path.join(dir, item.get('id') + '.jpg'));
+        yield fs.rename(picPath, path.join(dir, item.get('id') + path.extname(picPath)));
     }
     this.body = item.toJSON();
 }).get('/object/:id', function *(next) {

@@ -13,6 +13,10 @@ var rmdir = require('rmdir');
 var knex = require('./knex.js');
 var bookshelf = require('bookshelf')(knex);
 var path = require('path');
+var utils = require('./utils.js');
+var mv = require('mv');
+var tmp = require('tmp');
+var fs = require('mz/fs');
 
 
 router.get('/list', function *(next) {
@@ -83,6 +87,24 @@ router.get('/list', function *(next) {
     }
     this.body = {};
     yield next;
+}).post('/object', koaBody, function *(next) {
+    var picPaths = this.request.body.picPaths;
+    delete this.request.body.picPaths;
+    var item = yield models.SPU.forge(casing.snakeize(this.request.body)).save();
+    if (picPaths) {
+        dir = path.join(config.get('assetDir'), 'spu_pics', item.get('id') + '');
+        yield utils.assertDir(dir);
+        for (var picPath of picPaths) {
+            
+            var tmpName = yield cofy.fn(tmp.tmpName)({
+                dir: dir, 
+                postfix: path.extname(picPath),
+                prefix: '',
+            });
+            yield fs.rename(picPath, tmpName);
+        }
+    }
+    this.body = item.toJSON();
 });
 
 exports.app = koa().use(json()).use(router.routes())
