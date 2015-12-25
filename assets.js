@@ -19,7 +19,7 @@ router.post('/', function *(next) {
         if (!part.length) {
             // part is stream
             var extname = path.extname(part.filename);
-            var dir = path.join(__dirname, 'assets/tmp');
+            var dir = path.join(config.get('assetDir'), 'tmp');
             yield utils.assertDir(dir);
             var path_ = yield cofy.fn(tmp.tmpName)({ dir: dir, postfix: extname, prefix: '' });
             var stream = fs.createWriteStream(path_);
