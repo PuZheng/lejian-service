@@ -9,6 +9,7 @@ var mkdirp = require('co-mkdirp');
 var path = require('path');
 var conf = require('./config.js');
 var fakeImage = require('./fake-image.js');
+var fakeTime = require('./fake-time.js');
 var cs = require('co-stream');
 var setupAdmin = require('./setup-admin.js');
 var cofy = require('cofy');
@@ -53,6 +54,7 @@ if (require.main === module) {
                 weibo_homepage: chance.url(),
                 weixin_account: chance.last(),
             }).into('TB_VENDOR'))[0];
+            let msInWeek = 7 * 24 * 3600 * 1000;
             for (let j = 0; j < chance.integer({ min: 1, max: 16 }); ++j) {
                 let name = chance.word();
                 logger.info('CREATING SPU ' + name);
@@ -65,6 +67,7 @@ if (require.main === module) {
                     enabled: chance.bool(),
                     desc: chance.paragraph(),
                     spu_type_id: _.sample(spuTypes).id,
+                    created_at: fakeTime.time(-msInWeek, 0),
                 }).into('TB_SPU');
                 let dir = path.join(conf.get('assetDir'), 'spu_pics', '' + spuId);
                 yield utils.assertDir(dir);
