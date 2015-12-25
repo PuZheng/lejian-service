@@ -8,6 +8,11 @@ var logger = require('./logger.js');
 var _ = require('lodash');
 var urljoin = require('url-join');
 var config = require('./config.js');
+var cofy = require('cofy');
+var rmdir = require('rmdir');
+var knex = require('./knex.js');
+var bookshelf = require('bookshelf')(knex);
+var path = require('path');
 
 
 router.get('/list', function *(next) {
@@ -57,6 +62,27 @@ router.get('/list', function *(next) {
         data: data,
         totalCount: totalCount,
     };
+}).delete('/list', function *(next) {
+    var ids = this.query.ids.split(',');
+    var t = yield cofy.fn(bookshelf.transaction, false, bookshelf)();
+
+    var id;
+    for (id of ids) {
+        yield models.SPU.forge({ id: id }).destroy({
+            transacting: t,
+        });
+    }
+    try {
+        yield t.commit();
+    } catch (e) {
+        yield t.rollback();
+        throw e;
+    }
+    for (id of ids) {
+        yield cofy.fn(rmdir)(path.join(config.get('assetDir'), 'spu_pics', id));
+    }
+    this.body = {};
+    yield next;
 });
 
 exports.app = koa().use(json()).use(router.routes())
