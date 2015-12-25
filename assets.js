@@ -8,35 +8,22 @@ var logger = require('./logger.js');
 var tmp = require('tmp');
 var utils = require('./utils.js');
 var fs = require('mz/fs');
+var cofy = require('cofy');
 
 router.post('/', function *(next) {
     var parts = parse(this);
     var part;
     var filenames = [];
     var paths = [];
-    var createWriteStream = function (dir) {
-        return new Promise(function (resolve, reject) {
-            tmp.file({ dir: dir }, function (err, path_, fd, cb) {
-                if (err) {
-                    reject(err);
-                    return;
-                } 
-                resolve(fs.createWriteStream(path_));
-            });
-        });
-    };
     while ((part = yield parts)) {
-        if (part.length) {
-            // part is field
-            var key = part[0];
-            key === 'x-filenames' && (filenames = JSON.parse(part[1]));
-        } else {
+        if (!part.length) {
             // part is stream
-            var filename = filenames.shift() || part.filename;
+            var extname = path.extname(part.filename);
             var dir = path.join(__dirname, 'assets/tmp');
-            utils.assertDir(dir);
-            var stream = yield createWriteStream(dir);
-            logger.info('uploading %s -> %s', filename, stream.path);
+            yield utils.assertDir(dir);
+            var path_ = yield cofy.fn(tmp.tmpName)({ dir: dir, postfix: extname, prefix: '' });
+            var stream = fs.createWriteStream(path_);
+            logger.info('uploading %s', stream.path);
             part.pipe(stream);
             paths.push(stream.path);
         }

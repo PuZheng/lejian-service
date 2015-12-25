@@ -72,7 +72,7 @@ if (require.main === module) {
                 let dir = path.join(conf.get('assetDir'), 'spu_pics', '' + spuId);
                 yield utils.assertDir(dir);
                 for (let k = 0; k < chance.integer({ min: 1, max: 4 }); ++k) {
-                   let picPath = (yield cofy.fn(tmp.tmpName)({ dir: dir, postfix: '.jpg' }));
+                   let picPath = (yield cofy.fn(tmp.tmpName)({ dir: dir, postfix: '.jpg', prefix: '' }));
                    let ws = fs.createWriteStream(picPath);
                    fakeImage(name).pipe(ws);
                    yield cs.wait(ws);
