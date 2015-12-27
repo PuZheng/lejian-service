@@ -105,6 +105,25 @@ router.get('/list', function *(next) {
         }
     }
     this.body = item.toJSON();
+}).get('/object/:id', function *(next) {
+    try {
+        var item = yield models.SPU.forge({ id: this.params.id }).fetch({ require: true });
+        var picPaths = yield item.getPicPaths(); 
+        this.body = _.assign(item.toJSON(), {
+            picPaths: picPaths,
+            pics: picPaths.map(function (picPath) {
+                return {
+                    path: picPath,
+                    url: urljoin(config.get('site'), picPath)
+                };
+            })
+        });
+    } catch (e) {
+        if (e.message != 'EmptyResponse') {
+            throw e;
+        }
+        this.status = 404;
+    }
 });
 
 exports.app = koa().use(json()).use(router.routes())
