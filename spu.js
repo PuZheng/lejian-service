@@ -124,6 +124,42 @@ router.get('/list', function *(next) {
         }
         this.status = 404;
     }
+}).put('/object/:id', koaBody, function *(next) {
+    try {
+        var spu = yield models.SPU.forge({ id: this.params.id }).fetch({
+            require: true
+        });
+        var picPaths = this.request.body.picPaths;
+        var origPicPaths = yield spu.getPicPaths();
+        delete this.request.body.picPaths;
+        spu = yield spu.save(casing.snakeize(this.request.body));
+        var dir = path.join(config.get('assetDir'), 'spu_pics', spu.get('id') + '');
+        var path_;
+        if (picPaths) {
+            for (path_ of picPaths) {
+                if (origPicPaths.indexOf(path_) === -1) {
+                    var dest = yield cofy.fn(tmp.tmpName)({ 
+                        dir: dir, 
+                        prefix: '', 
+                        postfix: path.extname(path_),
+                    });
+                    yield fs.rename(path_, dest);
+                }
+            }
+            for (path_ of origPicPaths) {
+                if (picPaths.indexOf(path_) === -1) {
+                    yield fs.unlink(path_);
+                }
+            }
+        }
+        this.body = spu.toJSON() ;
+        this.body.picPaths = yield spu.getPicPaths();
+    } catch (e) {
+        if (e.message != 'EmptyResponse') {
+            throw e;
+        }
+        this.status = 404;
+    }
 });
 
 exports.app = koa().use(json()).use(router.routes())
