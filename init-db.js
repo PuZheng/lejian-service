@@ -33,7 +33,7 @@ var initDB = function (knex) {
         table.string('addr', 256);
         table.string('email', 32);
         table.string('website', 32);
-        table.string('weibo_uid', 32);
+        table.string('weibo_user_id', 32);
         table.string('weibo_homepage', 32);
         table.string('weixin_account', 32);
         table.boolean('enabled');

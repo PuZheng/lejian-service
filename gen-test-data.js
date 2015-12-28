@@ -1,3 +1,5 @@
+#! /usr/bin/env node
+
 var initDB = require('./init-db.js');
 var co = require('co');
 var logger = require('./logger.js');
@@ -50,9 +52,10 @@ if (require.main === module) {
                 addr: chance.address(),
                 email: chance.email(),
                 website: chance.url(),
-                weibo_uid: chance.word(),
+                weibo_user_id: chance.word(),
                 weibo_homepage: chance.url(),
                 weixin_account: chance.last(),
+                enabled: chance.bool(),
             }).into('TB_VENDOR'))[0];
             let msInWeek = 7 * 24 * 3600 * 1000;
             for (let j = 0; j < chance.integer({ min: 1, max: 16 }); ++j) {
