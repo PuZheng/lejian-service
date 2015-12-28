@@ -27,6 +27,16 @@ router.get('/list', function *(next) {
         }
         throw e;
     }
+}).get('/object/:id', function *(next) {
+    try {
+        var item = yield models.Vendor.forge({ id: this.params.id }).fetch({ require: true });
+        this.body = item.toJSON();
+    } catch (e) {
+        if (e.message != 'EmptyResponse') {
+            throw e;
+        }
+        this.status = 404;
+    }
 });
 
 exports.app = koa().use(json()).use(router.routes()).use(router.allowedMethods());
