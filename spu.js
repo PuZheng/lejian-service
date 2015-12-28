@@ -160,6 +160,15 @@ router.get('/list', function *(next) {
         }
         this.status = 404;
     }
+}).get('/auto-complete/:kw', function *(next) {
+    var c = yield models.SPU.where('name', 'like', '%%' + this.params.kw + '%%').fetchAll();
+    this.body = {
+        results: (c).map(function (item) {
+            return {
+                title: item.get('name'),
+            };
+        })
+    };
 });
 
 exports.app = koa().use(json()).use(router.routes())
