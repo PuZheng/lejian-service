@@ -4,6 +4,7 @@ var json = require('koa-json');
 var models = require('./models.js');
 var koaBody = require('koa-body')();
 var casing = require('casing');
+var logger = require('./logger.js');
 
 
 router.get('/list', function *(next) {
@@ -37,6 +38,18 @@ router.get('/list', function *(next) {
         }
         this.status = 404;
     }
+}).put('/object/:id', koaBody, function *(next) {
+    try {
+        var item = yield models.Vendor.forge({ id: this.params.id }).fetch({ require: true });
+        item = yield item.save(casing.snakeize(this.request.body));
+        this.body = item.toJSON();
+    } catch (e) {
+        if (e.message != 'EmptyResponse') {
+            throw e;
+        }
+        this.status = 404;
+    }
+    
 });
 
 exports.app = koa().use(json()).use(router.routes()).use(router.allowedMethods());
