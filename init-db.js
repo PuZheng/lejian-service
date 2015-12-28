@@ -26,7 +26,7 @@ var initDB = function (knex) {
     }).createTable('TB_VENDOR', function (table) {
 
         table.increments();
-        table.string('name').notNullable();
+        table.string('name').notNullable().unique();
         table.string('desc', 256);
         table.timestamp('created_at').defaultTo(knex.fn.now());
         table.string('tel', 32);
