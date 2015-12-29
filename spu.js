@@ -66,6 +66,7 @@ router.get('/list', function *(next) {
         data: data,
         totalCount: totalCount,
     };
+    yield next;
 }).delete('/list', function *(next) {
     var ids = this.query.ids.split(',');
     var t = yield cofy.fn(bookshelf.transaction, false, bookshelf)();
