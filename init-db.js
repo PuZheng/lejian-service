@@ -37,6 +37,16 @@ var initDB = function (knex) {
         table.string('weibo_homepage', 32);
         table.string('weixin_account', 32);
         table.boolean('enabled');
+    }).createTable('TB_SKU', function (table) {
+        table.increments();
+        table.integer('spu_id').notNullable().references('TB_SPU.id');
+        table.date('production_date').notNullable();
+        table.date('expire_date').notNullable();
+        table.string('token').notNullable();
+        table.string('checksum').notNullable();
+        table.integer('verify_count').defaultTo(0);
+        table.timestamp('last_verified_at');
+        table.timestamp('created_at').defaultTo(knex.fn.now());
     });
 };
 
