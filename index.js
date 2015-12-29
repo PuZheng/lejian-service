@@ -7,8 +7,9 @@ var logger = require('./logger.js');
 var mount = require('koa-mount');
 var fs = require('fs');
 var jwt = require('koa-jwt');
+var slow = require('koa-slow');
 
-if (process.env.NODE_ENV !== 'production'){
+if (config.get('env') !== 'production'){
     require('longjohn');
 }
 
@@ -41,6 +42,9 @@ if (require.main === module) {
         .use(mount('/spu', require('./spu.js').app))
         .use(mount('/sku', require('./sku.js').app))
         .use(mount('/spu-type', require('./spu-type.js').app));
+        if (config.get('env') === 'development') {
+            app.use(slow());
+        }
         app.listen(config.get('port'));
     });
 }

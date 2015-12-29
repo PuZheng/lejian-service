@@ -53,6 +53,9 @@ router.get('/list', function *(next) {
 }).post('/object', koaBody, function *(next) {
     var item = yield models.SKU.forge(casing.snakeize(this.request.body)).save();
     this.body = item.toJSON();
+}).get('/object/:id', function *(next) {
+    this.body = (yield models.SKU.forge({ id: this.params.id }).fetch({ withRelated: [ 'spu' ] })).toJSON();
+    yield next;
 });
 
 exports.app = koa().use(json()).use(router.routes()).use(router.allowedMethods());
