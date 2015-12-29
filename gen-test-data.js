@@ -17,68 +17,105 @@ var setupAdmin = require('./setup-admin.js');
 var cofy = require('cofy');
 var tmp = require('tmp');
 
+function *genSPUType(dir) {
+    var name = chance.word();
+    var id = (yield knex.insert({
+        name: name,
+        enabled: true,
+        weight: chance.integer({ min: 0, max: 5 }),
+    }).into('TB_SPU_TYPE'))[0];
+    var picPath = path.join(dir, id + '.jpg');
+    var ws = fs.createWriteStream(picPath);
+    fakeImage(name).pipe(ws);
+    yield *cs.wait(ws);
+    return id;
+}
+
+function *genVendor() {
+    var name = chance.word();
+    logger.info('CREATING VENDOR ' + name);
+    var vendorId = (yield knex.insert({
+        name: name,
+        desc: chance.paragraph(),
+        tel: chance.phone(),
+        addr: chance.address(),
+        email: chance.email(),
+        website: chance.url(),
+        weibo_user_id: chance.word(),
+        weibo_homepage: chance.url(),
+        weixin_account: chance.last(),
+        enabled: chance.bool(),
+    }).into('TB_VENDOR'))[0];
+    return vendorId;
+}
+
+function *genSPU(vendorId, spuTypes) {
+    var name = chance.word();
+    logger.info('CREATING SPU ' + name);
+    var msInWeek = 7 * 24 * 3600 * 1000;
+    var spuId = (yield knex.insert({
+        name: name,
+        code: chance.natural() + '',
+        msrp: chance.floating({ min: 1, max: 1000, fixed: 2 }),
+        vendor_id: vendorId,
+        rating: chance.integer({ min: 1, max: 5 , }),
+        enabled: chance.bool(),
+        desc: chance.paragraph(),
+        spu_type_id: _.sample(spuTypes).id,
+        created_at: fakeTime.time(-msInWeek, 0),
+    }).into('TB_SPU'))[0];
+    var dir = path.join(conf.get('assetDir'), 'spu_pics', '' + spuId);
+    yield utils.assertDir(dir);
+    for (var k = 0; k < chance.integer({ min: 1, max: 4 }); ++k) {
+        var picPath = (yield cofy.fn(tmp.tmpName)({ dir: dir, postfix: '.jpg', prefix: '' }));
+        var ws = fs.createWriteStream(picPath);
+        fakeImage(name).pipe(ws);
+        yield cs.wait(ws);
+    }
+    return spuId;
+}
+
+function fakeSKUData(spuId) {
+    var msInWeek = 7 * 24 * 3600 * 1000;
+    return function () {
+        var productionDate = chance.date({ year: new Date().getFullYear() - chance.integer({ min: 0, max: 3 }) });
+        var expireDate = new Date(productionDate);
+        expireDate.setDate(expireDate.getDate() + chance.integer({ min: 180, max: 2 * 365 }));
+        return {
+            spu_id: spuId,
+            production_date: productionDate,
+            expire_date: expireDate, 
+            token: chance.word(),
+            checksum: chance.string(),
+            verify_count: chance.integer({ min: 0 }),
+            last_verified_at: fakeTime.time(-msInWeek, 0),
+        };
+    };
+}
+
 if (require.main === module) {
     var knex = require('./knex.js');
     co(function *() {
         'use strict';
         yield initDB(knex);
         yield setupAdmin(knex);
-        logger.info('CREATING SPU TYPES');
         let dir = path.join(conf.get('assetDir'), 'spu_type_pics');
         if (!(yield fs.exists(dir))) {
             yield mkdirp(dir);
         }
+
         for (let i = 0; i < 8; ++i) {
-            let name = chance.word();
-            let id = (yield knex.insert({
-                name: name,
-                enabled: true,
-                weight: chance.integer({ min: 0, max: 5 }),
-            }).into('TB_SPU_TYPE'))[0];
-            let picPath = path.join(dir, id + '.jpg');
-            let ws = fs.createWriteStream(picPath);
-            fakeImage(name).pipe(ws);
-            yield *cs.wait(ws);
+            yield genSPUType(dir);
         }
         var spuTypes = yield knex('TB_SPU_TYPE').select('*');
         
         for (let i = 0; i < 16; ++i) {
-            let name = chance.word();
-            logger.info('CREATING VENDOR ' + name);
-            let vendorId = (yield knex.insert({
-                name: name,
-                desc: chance.paragraph(),
-                tel: chance.phone(),
-                addr: chance.address(),
-                email: chance.email(),
-                website: chance.url(),
-                weibo_user_id: chance.word(),
-                weibo_homepage: chance.url(),
-                weixin_account: chance.last(),
-                enabled: chance.bool(),
-            }).into('TB_VENDOR'))[0];
-            let msInWeek = 7 * 24 * 3600 * 1000;
+            let vendorId = yield genVendor();
             for (let j = 0; j < chance.integer({ min: 1, max: 16 }); ++j) {
-                let name = chance.word();
-                logger.info('CREATING SPU ' + name);
-                let spuId = yield knex.insert({
-                    name: name,
-                    code: chance.natural() + '',
-                    msrp: chance.floating({ min: 1, max: 1000, fixed: 2 }),
-                    vendor_id: vendorId,
-                    rating: chance.integer({ min: 1, max: 5 , }),
-                    enabled: chance.bool(),
-                    desc: chance.paragraph(),
-                    spu_type_id: _.sample(spuTypes).id,
-                    created_at: fakeTime.time(-msInWeek, 0),
-                }).into('TB_SPU');
-                let dir = path.join(conf.get('assetDir'), 'spu_pics', '' + spuId);
-                yield utils.assertDir(dir);
-                for (let k = 0; k < chance.integer({ min: 1, max: 4 }); ++k) {
-                   let picPath = (yield cofy.fn(tmp.tmpName)({ dir: dir, postfix: '.jpg', prefix: '' }));
-                   let ws = fs.createWriteStream(picPath);
-                   fakeImage(name).pipe(ws);
-                   yield cs.wait(ws);
+                let spuId = yield genSPU(vendorId, spuTypes);
+                for (let m = 0; m < chance.integer({ min: 100, max: 200 }); ++m) {
+                    var skuData = _.times(chance.integer({ min: 50, max: 100 }), fakeSKUData(spuId));
+                    yield knex.insert(skuData).into('TB_SKU');
                 }
             }
         }

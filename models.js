@@ -90,9 +90,20 @@ var Vendor = bookshelf.Model.extend({
     },
 });
 
+var SKU = bookshelf.Model.extend({
+    tableName: 'TB_SKU',
+    serialize: function () {
+        return casing.camelize(bookshelf.Model.prototype.serialize.apply(this));
+    },
+    spu: function () {
+        return this.belongsTo(SPU, 'spu_id');
+    },
+});
+
 module.exports = {
     SPUType: SPUType,
     User: User,
     SPU: SPU,
-    Vendor: Vendor
+    Vendor: Vendor,
+    SKU: SKU,
 };
