@@ -7,6 +7,7 @@ var casing = require('casing');
 var cofy = require('cofy');
 var knex = require('./knex.js');
 var bookshelf = require('bookshelf')(knex);
+var koaBody = require('koa-body')();
 
 router.get('/list', function *(next) {
     var model = models.SKU;
@@ -49,6 +50,9 @@ router.get('/list', function *(next) {
     }
     this.body = {};
     yield next;
+}).post('/object', koaBody, function *(next) {
+    var item = yield models.SKU.forge(casing.snakeize(this.request.body)).save();
+    this.body = item.toJSON();
 });
 
 exports.app = koa().use(json()).use(router.routes()).use(router.allowedMethods());
