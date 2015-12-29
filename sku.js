@@ -4,6 +4,9 @@ var router = require('koa-router')();
 var logger = require('./logger.js');
 var models = require('./models.js');
 var casing = require('casing');
+var cofy = require('cofy');
+var knex = require('./knex.js');
+var bookshelf = require('bookshelf')(knex);
 
 router.get('/list', function *(next) {
     var model = models.SKU;
@@ -29,6 +32,22 @@ router.get('/list', function *(next) {
         data: (yield model.fetchAll({ withRelated: [ 'spu' ] })).toJSON(),
         totalCount: totalCount,
     };
+    yield next;
+}).delete('/list', function *(next) {
+    var ids = this.query.ids.split(',');
+    var t = yield cofy.fn(bookshelf.transaction, false, bookshelf)();
+    yield ids.map(function (id) {
+        return models.SKU.forge({ id: id }).destroy({
+            transacting: t,
+        });
+    });
+    try {
+        yield t.commit();
+    } catch (e) {
+        yield t.rollback();
+        throw e;
+    }
+    this.body = {};
     yield next;
 });
 
