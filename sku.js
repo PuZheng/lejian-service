@@ -54,7 +54,21 @@ router.get('/list', function *(next) {
     var item = yield models.SKU.forge(casing.snakeize(this.request.body)).save();
     this.body = item.toJSON();
 }).get('/object/:id', function *(next) {
-    this.body = (yield models.SKU.forge({ id: this.params.id }).fetch({ withRelated: [ 'spu' ] })).toJSON();
+    var item = yield models.SKU.forge({ id: this.params.id }).fetch({ withRelated: [ 'spu' ] });
+    if (!item) {
+        this.status = 404;
+        return;
+    }
+    this.body = item.toJSON();
+    yield next;
+}).put('/object/:id', koaBody, function *(next) {
+    var item = yield models.SKU.forge({ id: this.params.id }).fetch({ withRelated: [ 'spu' ] });
+    if (!item) {
+        this.status = 404;
+        return;
+    }
+    item = yield item.save(casing.snakeize(this.request.body));
+    this.body = item.toJSON();
     yield next;
 });
 

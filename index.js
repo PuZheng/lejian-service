@@ -43,7 +43,7 @@ if (require.main === module) {
         .use(mount('/sku', require('./sku.js').app))
         .use(mount('/spu-type', require('./spu-type.js').app));
         if (config.get('env') === 'development') {
-            app.use(slow());
+            app.use(slow({ delay: 200 }));
         }
         app.listen(config.get('port'));
     });
