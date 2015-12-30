@@ -1,3 +1,4 @@
+#! /usr/bin/env node
 
 var initDB = function (knex) {
     return knex.schema.createTable('TB_SPU_TYPE', function (table) {
@@ -40,6 +41,7 @@ var initDB = function (knex) {
     }).createTable('TB_SKU', function (table) {
         table.increments();
         table.integer('spu_id').notNullable().references('TB_SPU.id');
+        table.unique(['spu_id', 'token']);
         table.date('production_date').notNullable();
         table.date('expire_date').notNullable();
         table.string('token').notNullable();
