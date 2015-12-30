@@ -85,7 +85,7 @@ function fakeSKUData(spuId) {
             spu_id: spuId,
             production_date: productionDate,
             expire_date: expireDate, 
-            token: chance.word(),
+            token: chance.string({ length: 24 }),
             checksum: chance.string(),
             verify_count: chance.integer({ min: 0 }),
             last_verified_at: fakeTime.time(-msInWeek, 0),
