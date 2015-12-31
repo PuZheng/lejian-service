@@ -54,6 +54,7 @@
     "gulp": "^3.9.0",
     "gulp-nodemon": "^2.0.4",
     "longjohn": "^0.2.11",
-    "shelljs": "^0.5.3"
+    "shelljs": "^0.5.3",
+    "yargs": "^3.31.0"
   }
 }

@@ -16,6 +16,7 @@ var cs = require('co-stream');
 var setupAdmin = require('./setup-admin.js');
 var cofy = require('cofy');
 var tmp = require('tmp');
+var argv = require('yargs').argv;
 
 function *genSPUType(dir) {
     var name = chance.word();
@@ -113,7 +114,7 @@ if (require.main === module) {
             let vendorId = yield genVendor();
             for (let j = 0; j < chance.integer({ min: 1, max: 16 }); ++j) {
                 let spuId = yield genSPU(vendorId, spuTypes);
-                for (let m = 0; m < chance.integer({ min: 100, max: 200 }); ++m) {
+                for (let m = 0; m < (argv.q? 1: chance.integer({ min: 100, max: 200 })); ++m) {
                     var skuData = _.times(chance.integer({ min: 50, max: 100 }), fakeSKUData(spuId));
                     yield knex.insert(skuData).into('TB_SKU');
                 }
