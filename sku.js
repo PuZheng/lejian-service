@@ -34,6 +34,26 @@ router.get('/list', function *(next) {
         totalCount: totalCount,
     };
     yield next;
+}).post('/list', koaBody, function *(next) {
+    var t = yield cofy.fn(knex.transaction, false)();
+    for (var row of this.request.body.data) {
+        try {
+            yield knex('TB_SKU').transacting(t).insert(casing.snakeize(row));
+        } catch (e) {
+            logger.error(e);
+            yield t.rollback();
+            this.status = 403;
+            this.body = {
+                row: row,
+                error: e,
+            };
+            yield next;
+            return;
+        }
+    }
+    yield t.commit();
+    this.body = {};
+    yield next;
 }).delete('/list', function *(next) {
     var ids = this.query.ids.split(',');
     var t = yield cofy.fn(bookshelf.transaction, false, bookshelf)();
