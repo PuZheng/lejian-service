@@ -54,8 +54,6 @@ router.get('/list', function *(next) {
         }
 
     }
-    for (var row of this.request.body.data) {
-    }
     yield t.commit();
     this.body = {};
     yield next;

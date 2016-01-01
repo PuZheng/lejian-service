@@ -49,6 +49,20 @@ var initDB = function (knex) {
         table.integer('verify_count').defaultTo(0);
         table.timestamp('last_verified_at');
         table.timestamp('created_at').defaultTo(knex.fn.now());
+    }).createTable('TB_RETAILER', function (table) {
+        table.increments();
+        table.string('name').notNullable();
+        table.string('desc').notNullable();
+        table.integer('rating');
+        table.float('lng');
+        table.float('lat');
+        table.float('tel');
+        table.string('addr');
+        table.timestamp('created_at').defaultTo(knex.fn.now());
+        table.boolean('enabled');
+    }).createTable('retailer_spu', function (table) {
+        table.integer('retailer_id').references('TB_RETAILER.id');
+        table.integer('spu_id').references('TB_SPU.id');
     });
 };
 
