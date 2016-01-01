@@ -17,6 +17,7 @@ var setupAdmin = require('./setup-admin.js');
 var cofy = require('cofy');
 var tmp = require('tmp');
 var argv = require('yargs').argv;
+var fakeLnglat = require('./fake-lnglat.js');
 
 function *genSPUType(dir) {
     var name = chance.word();
@@ -48,6 +49,27 @@ function *genVendor() {
         enabled: chance.bool(),
     }).into('TB_VENDOR'))[0];
     return vendorId;
+}
+
+function *genRetailer(dir) {
+    var name = chance.word();
+    logger.info('CREATING RETAILER ' + name);
+    var lnglat = fakeLnglat();
+    var id = (yield knex('TB_RETAILER').insert({
+        name: name,
+        desc: chance.paragraph(),
+        tel: chance.phone(),
+        addr: chance.address(),
+        enabled: chance.bool(),
+        rating: chance.integer({ min: 1, max: 5 }),
+        lng: lnglat.lng,
+        lat: lnglat.lat,
+    }))[0];
+    var picPath = path.join(dir, '' + id + '.jpg');
+    var ws = fs.createWriteStream(picPath);
+    fakeImage(name).pipe(ws);
+    yield cs.wait(ws);
+    return id;
 }
 
 function *genSPU(vendorId, spuTypes) {
@@ -109,11 +131,26 @@ if (require.main === module) {
             yield genSPUType(dir);
         }
         var spuTypes = yield knex('TB_SPU_TYPE').select('*');
-        
+
+        dir = path.join(conf.get('assetDir'), 'retailer_pics');
+        if (!(yield fs.exists(dir))) {
+            yield mkdirp(dir);
+        }
+        for (let i=0; i < 256; ++i) {
+            yield genRetailer(dir);
+        }
+        var retailers = yield knex('TB_RETAILER').select('*');
+
         for (let i = 0; i < 16; ++i) {
             let vendorId = yield genVendor();
             for (let j = 0; j < chance.integer({ min: 1, max: 16 }); ++j) {
                 let spuId = yield genSPU(vendorId, spuTypes);
+                for (var retailer of _.sample(retailers, 5)) {
+                    yield knex('retailer_spu').insert({
+                        spu_id: spuId,
+                        retailer_id: retailer.id
+                    });
+                }
                 for (let m = 0; m < (argv.q? 1: chance.integer({ min: 100, max: 200 })); ++m) {
                     var skuData = _.times(chance.integer({ min: 50, max: 100 }), fakeSKUData(spuId));
                     yield knex.insert(skuData).into('TB_SKU');

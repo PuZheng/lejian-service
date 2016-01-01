@@ -41,6 +41,7 @@ if (require.main === module) {
         .use(mount('/vendor', require('./vendor.js').app))
         .use(mount('/spu', require('./spu.js').app))
         .use(mount('/sku', require('./sku.js').app))
+        .use(mount('/retailer', require('./retailer.js').app))
         .use(mount('/spu-type', require('./spu-type.js').app));
         if (config.get('env') === 'development') {
             app.use(slow({ delay: 200 }));

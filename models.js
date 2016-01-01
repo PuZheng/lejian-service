@@ -81,6 +81,9 @@ var SPU = bookshelf.Model.extend({
             return path.join(dir, path_);
         });
     },
+    retailerList: function () {
+        return this.belongsToMany(Retailer, 'retailer_spu', 'spu_id', 'retailer_id');
+    }
 });
 
 var Vendor = bookshelf.Model.extend({
@@ -100,10 +103,31 @@ var SKU = bookshelf.Model.extend({
     },
 });
 
+var Retailer = bookshelf.Model.extend({
+    tableName: 'TB_RETAILER',
+    serialize: function () {
+        return casing.camelize(bookshelf.Model.prototype.serialize.apply(this));
+    },
+
+    spuList: function () {
+        return this.belongsToMany(SPU, 'retailer_spu', 'spu_id', 'retailer_id');
+    },
+
+    picPath: function () {
+        return path.join(config.get('assetDir'), 'retailer_pics', '' + this.id);
+    },
+
+    getSPUCnt: function *() {
+        return (yield knex('TB_SPU').join('retailer_spu', 'spu_id', '=', 'retailer_spu.spu_id').where('retailer_spu.retailer_id', this.id).count())[0]['count(*)'];
+    }
+
+});
+
 module.exports = {
     SPUType: SPUType,
     User: User,
     SPU: SPU,
     Vendor: Vendor,
     SKU: SKU,
+    Retailer: Retailer,
 };
