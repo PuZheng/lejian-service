@@ -5,6 +5,10 @@ var models = require('./models.js');
 var logger = require('./logger.js');
 var casing = require('casing');
 var _ = require('lodash');
+var koaBody = require('koa-body')();
+var path = require('path');
+var fs = require('mz/fs');
+var config = require('./config.js');
 
 router.get('/list', function *(next) {
     var model = models.Retailer;
@@ -29,8 +33,12 @@ router.get('/list', function *(next) {
     var c = (yield model.fetchAll());
     var data = yield (c.map(function (retailer) {
         return function *() {
-            return _.assign(retailer.toJSON(), {
-                pic: retailer.picPath(),
+            var ret = retailer.toJSON();
+            return _.assign(ret, {
+                pic: {
+                    path: ret.picPath,
+                    url: path.join(config.get('site'), ret.picPath),
+                },
                 spuCnt: yield retailer.getSPUCnt()
             });
         };
@@ -41,6 +49,21 @@ router.get('/list', function *(next) {
         data: data,
     };
     yield next;
+}).post('/object', koaBody, function *(next) {
+    this.request.body;
+    var picPath = this.request.body.picPath;
+    delete this.request.body.picPath;
+    var item = (yield models.Retailer.forge(casing.snakeize(this.request.body)).save());
+
+    if (picPath) {
+        yield fs.rename(picPath, 
+                        path.join(config.get('assetDir'), 'retailer_pics', '' + id + path.extname(picPath)));
+    }
+    this.body = item.toJSON();
+    this.body.pic = {
+        path: this.body.picPath,
+        url: path.join(config.get('site'), this.body.picPath),
+    };
 });
 
 exports.app = koa().use(json()).use(router.routes()).use(router.allowedMethods());

@@ -52,7 +52,7 @@ var initDB = function (knex) {
     }).createTable('TB_RETAILER', function (table) {
         table.increments();
         table.string('name').notNullable();
-        table.string('desc').notNullable();
+        table.string('desc');
         table.integer('rating');
         table.float('lng');
         table.float('lat');
