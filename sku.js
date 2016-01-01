@@ -36,7 +36,8 @@ router.get('/list', function *(next) {
     yield next;
 }).post('/list', koaBody, function *(next) {
     var t = yield cofy.fn(knex.transaction, false)();
-    for (var row of this.request.body.data) {
+    for (var i = 0; i < this.request.body.data.length; ++i) {
+        var row = this.request.body.data[i];
         try {
             yield knex('TB_SKU').transacting(t).insert(casing.snakeize(row));
         } catch (e) {
@@ -44,12 +45,16 @@ router.get('/list', function *(next) {
             yield t.rollback();
             this.status = 403;
             this.body = {
+                rowNO: i,
                 row: row,
                 error: e,
             };
             yield next;
             return;
         }
+
+    }
+    for (var row of this.request.body.data) {
     }
     yield t.commit();
     this.body = {};
