@@ -6,6 +6,7 @@ var config = require('./config.js');
 var bcrypt = require('bcrypt');
 var path = require('path');
 var walk = require('co-walk');
+var _ = require('lodash');
 
 var SPUType = bookshelf.Model.extend({
     tableName: 'TB_SPU_TYPE',
@@ -106,15 +107,14 @@ var SKU = bookshelf.Model.extend({
 var Retailer = bookshelf.Model.extend({
     tableName: 'TB_RETAILER',
     serialize: function () {
-        return casing.camelize(bookshelf.Model.prototype.serialize.apply(this));
+        return _.assign(
+            casing.camelize(bookshelf.Model.prototype.serialize.apply(this)), {
+            picPath: path.join(config.get('assetDir'), 'retailer_pics', '' + this.id)
+        });
     },
 
     spuList: function () {
         return this.belongsToMany(SPU, 'retailer_spu', 'spu_id', 'retailer_id');
-    },
-
-    picPath: function () {
-        return path.join(config.get('assetDir'), 'retailer_pics', '' + this.id);
     },
 
     getSPUCnt: function *() {
