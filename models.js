@@ -12,15 +12,11 @@ var SPUType = bookshelf.Model.extend({
     tableName: 'TB_SPU_TYPE',
     serialize: function () {
         var ret = casing.camelize(bookshelf.Model.prototype.serialize.apply(this));
-        ret.picPath = this.getPicPath();
         ret.pic = {
             path: ret.picPath,
             url: urljoin(config.get('site'), ret.picPath),
         };
         return ret;
-    },
-    getPicPath: function () {
-        return path.join(config.get('assetDir'), 'spu_type_pics', this.get('id') + '.jpg');
     },
     getSpuCnt: function () {
         return SPU.where('spu_type_id', this.get('id')).count();
@@ -110,10 +106,12 @@ var SKU = bookshelf.Model.extend({
 var Retailer = bookshelf.Model.extend({
     tableName: 'TB_RETAILER',
     serialize: function () {
-        return _.assign(
-            casing.camelize(bookshelf.Model.prototype.serialize.apply(this)), {
-            picPath: path.join(config.get('assetDir'), 'retailer_pics', '' + this.id)
-        });
+        var ret = casing.camelize(bookshelf.Model.prototype.serialize.apply(this));
+        ret.pic = {
+            path: ret.picPath,
+            url: urljoin(config.get('site'), ret.picPath),
+        };
+        return ret;
     },
 
     spuList: function () {

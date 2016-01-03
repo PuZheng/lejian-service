@@ -27,7 +27,15 @@ router.get('/list', function *(next) {
 }).post('/object', koaBody, function *(next) {
     var picPath = this.request.body.picPath;
     if (picPath) {
-        delete this.request.body.picPath;
+        dir = path.join(config.get('assetDir'), 'spu_type_pics');
+        yield utils.assertDir(dir);
+        var targetPath = yield cofy.fn(tmp.tmpName)({
+            dir: dir, 
+            prefix: '',
+            postfix: path.extname(picPath)
+        });
+        yield fs.rename(picPath, targetPath);
+        this.request.body.picPath = targetPath;
     }
     var item;
     try {
@@ -43,11 +51,6 @@ router.get('/list', function *(next) {
             return;
         }
         throw e;
-    }
-    if (picPath) {
-        dir = path.join(config.get('assetDir'), 'spu_type_pics');
-        yield utils.assertDir(dir);
-        yield fs.rename(picPath, path.join(dir, item.get('id') + path.extname(picPath)));
     }
     this.body = item.toJSON();
 }).get('/object/:id', function *(next) {
@@ -67,13 +70,17 @@ router.get('/list', function *(next) {
         var spuType = yield models.SPUType.forge({ id: this.params.id }).fetch({ require: true });
         var picPath = this.request.body.picPath;
         if (picPath) {
-            delete this.request.body.picPath;
+            dir = path.join(config.get('assetDir'), 'spu_type_pics');
+            yield utils.assertDir(dir);
+            var targetPath = yield cofy.fn(tmp.tmpName)({
+                dir: dir, 
+                prefix: '',
+                postfix: path.extname(picPath)
+            });
+            yield fs.rename(picPath, targetPath);
+            this.request.body.picPath = targetPath;
         }
         spuType = yield spuType.save(casing.snakeize(this.request.body));
-        if (picPath) {
-            yield fs.rename(picPath, path.join(config.get('assetDir'), 'spu_type_pics', 
-                                               spuType.get('id') + '.jpg'));
-        }
         this.body = spuType.toJSON();
         this.body.spuCnt = yield spuType.getSpuCnt();
     } catch (e) {
