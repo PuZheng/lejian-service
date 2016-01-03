@@ -84,6 +84,9 @@ var SPU = bookshelf.Model.extend({
     },
     retailerList: function () {
         return this.belongsToMany(Retailer, 'retailer_spu', 'spu_id', 'retailer_id');
+    },
+    getRetailerCnt: function *() {
+        return (yield knex('retailer_spu').where('spu_id', '=', '' + this.id).count())[0]['count(*)'];
     }
 });
 
@@ -118,7 +121,7 @@ var Retailer = bookshelf.Model.extend({
     },
 
     getSPUCnt: function *() {
-        return (yield knex('TB_SPU').join('retailer_spu', 'spu_id', '=', 'retailer_spu.spu_id').where('retailer_spu.retailer_id', this.id).count())[0]['count(*)'];
+        return (yield knex('retailer_spu').where('retailer_id', this.id).count())[0]['count(*)'];
     }
 
 });

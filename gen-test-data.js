@@ -18,6 +18,7 @@ var cofy = require('cofy');
 var tmp = require('tmp');
 var argv = require('yargs').argv;
 var fakeLnglat = require('./fake-lnglat.js');
+var shelljs = require('shelljs');
 
 function *genSPUType(dir) {
     var name = chance.word();
@@ -88,6 +89,7 @@ function *genSPU(vendorId, spuTypes) {
         created_at: fakeTime.time(-msInWeek, 0),
     }).into('TB_SPU'))[0];
     var dir = path.join(conf.get('assetDir'), 'spu_pics', '' + spuId);
+    shelljs.exec('rm -rf ' + dir);
     yield utils.assertDir(dir);
     for (var k = 0; k < chance.integer({ min: 1, max: 4 }); ++k) {
         var picPath = (yield cofy.fn(tmp.tmpName)({ dir: dir, postfix: '.jpg', prefix: '' }));
@@ -123,6 +125,7 @@ if (require.main === module) {
         yield initDB(knex);
         yield setupAdmin(knex);
         let dir = path.join(conf.get('assetDir'), 'spu_type_pics');
+        shelljs.exec('rm -rf ' + dir);
         if (!(yield fs.exists(dir))) {
             yield mkdirp(dir);
         }
@@ -133,6 +136,7 @@ if (require.main === module) {
         var spuTypes = yield knex('TB_SPU_TYPE').select('*');
 
         dir = path.join(conf.get('assetDir'), 'retailer_pics');
+        shelljs.exec('rm -rf ' + dir);
         if (!(yield fs.exists(dir))) {
             yield mkdirp(dir);
         }
@@ -145,7 +149,7 @@ if (require.main === module) {
             let vendorId = yield genVendor();
             for (let j = 0; j < chance.integer({ min: 1, max: 16 }); ++j) {
                 let spuId = yield genSPU(vendorId, spuTypes);
-                for (var retailer of _.sample(retailers, 5)) {
+                for (var retailer of _.sample(retailers, chance.integer({ min: 1, max: 50 }))) {
                     yield knex('retailer_spu').insert({
                         spu_id: spuId,
                         retailer_id: retailer.id
