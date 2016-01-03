@@ -92,6 +92,9 @@ router.get('/list', function *(next) {
 }).post('/object', koaBody, function *(next) {
     var picPaths = this.request.body.picPaths;
     delete this.request.body.picPaths;
+    var retailerIds = this.request.body.retailerIds;
+    delete this.request.body.retailerIds;
+
     var item = yield models.SPU.forge(casing.snakeize(this.request.body)).save();
     if (picPaths) {
         dir = path.join(config.get('assetDir'), 'spu_pics', item.get('id') + '');
@@ -105,6 +108,9 @@ router.get('/list', function *(next) {
             });
             yield fs.rename(picPath, tmpName);
         }
+    }
+    if (!_.isEmpty(retailerIds)) {
+        yield item.retailerList().attach(retailerIds);
     }
     this.body = item.toJSON();
 }).get('/object/:id', function *(next) {
