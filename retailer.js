@@ -24,6 +24,7 @@ router.get('/list', function *(next) {
     query = casing.camelize(this.query);
 
     model = model.query(function (q) {
+		query.rating && q.where('rating', query.rating);
         query.enabledOnly === '1' && q.where('enabled', true);
         query.kw && q.where('name', 'like', '%%' + query.kw + '%%');
     });
@@ -65,6 +66,16 @@ router.get('/list', function *(next) {
 
     var item = yield models.Retailer.forge(casing.snakeize(this.request.body)).save();
 	this.body = yield _jsonify(item);
+	yield next;
+}).get('/auto-complete/:kw', function *(next) {
+    var c = yield models.Retailer.where('name', 'like', '%%' + this.params.kw + '%%').fetchAll();
+    this.body = {
+        results: (c).map(function (item) {
+            return {
+                title: item.get('name'),
+            };
+        })
+    };
 	yield next;
 });
 
