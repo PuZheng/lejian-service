@@ -9,6 +9,15 @@ var koaBody = require('koa-body')();
 var path = require('path');
 var fs = require('mz/fs');
 var config = require('./config.js');
+var urljoin = require('url-join');
+var cofy = require('cofy');
+var tmp = require('tmp');
+
+var _jsonify = function *(retailer) {
+	return _.assign(retailer.toJSON(), {
+		spuCnt: yield retailer.getSPUCnt()
+	});
+};
 
 router.get('/list', function *(next) {
     var model = models.Retailer;
@@ -32,16 +41,7 @@ router.get('/list', function *(next) {
 
     var c = (yield model.fetchAll());
     var data = yield (c.map(function (retailer) {
-        return function *() {
-            var ret = retailer.toJSON();
-            return _.assign(ret, {
-                pic: {
-                    path: ret.picPath,
-                    url: path.join(config.get('site'), ret.picPath),
-                },
-                spuCnt: yield retailer.getSPUCnt()
-            });
-        };
+        return _jsonify(retailer);
     }));
 
     this.body = {
@@ -52,18 +52,20 @@ router.get('/list', function *(next) {
 }).post('/object', koaBody, function *(next) {
     this.request.body;
     var picPath = this.request.body.picPath;
-    delete this.request.body.picPath;
-    var item = (yield models.Retailer.forge(casing.snakeize(this.request.body)).save());
 
     if (picPath) {
-        yield fs.rename(picPath, 
-                        path.join(config.get('assetDir'), 'retailer_pics', '' + id + path.extname(picPath)));
+		var targetPath = cofy.fn(tmp.tmpName)({
+			dir: path.join(config.get('assetDir'), 'retailer_pics'),
+			prefix: '',
+			postfix: path.extname(picPath),
+		});
+        yield fs.rename(picPath, targetPath);
+		this.request.body.picPath = targetPath;
     }
-    this.body = item.toJSON();
-    this.body.pic = {
-        path: this.body.picPath,
-        url: path.join(config.get('site'), this.body.picPath),
-    };
+
+    var item = yield models.Retailer.forge(casing.snakeize(this.request.body)).save();
+	this.body = yield _jsonify(item);
+	yield next;
 });
 
 exports.app = koa().use(json()).use(router.routes()).use(router.allowedMethods());

@@ -6,7 +6,7 @@ var initDB = function (knex) {
         table.string('name').unique().notNullable();
         table.integer('weight');
         table.boolean('enabled');
-        table.string('picPath');
+        table.string('pic_path');
         table.timestamp('created_at').defaultTo(knex.fn.now());
     }).createTable('TB_USER', function (table) {
         table.increments();
@@ -58,7 +58,7 @@ var initDB = function (knex) {
         table.float('lat');
         table.float('tel');
         table.string('addr');
-        table.string('picPath');
+        table.string('pic_path');
         table.timestamp('created_at').defaultTo(knex.fn.now());
         table.boolean('enabled');
     }).createTable('retailer_spu', function (table) {

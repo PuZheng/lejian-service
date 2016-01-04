@@ -34,7 +34,7 @@ function *genSPUType(dir) {
         name: name,
         enabled: true,
         weight: chance.integer({ min: 0, max: 5 }),
-        picPath: picPath,
+        pic_path: picPath,
     }).into('TB_SPU_TYPE'))[0];
     return id;
 }
@@ -78,7 +78,7 @@ function *genRetailer(dir) {
         rating: chance.integer({ min: 1, max: 5 }),
         lng: lnglat.lng,
         lat: lnglat.lat,
-        picPath: picPath,
+        pic_path: picPath,
     }))[0];
     return id;
 }
@@ -119,7 +119,7 @@ function fakeSKUData(spuId) {
         return {
             spu_id: spuId,
             production_date: productionDate,
-            expire_date: expireDate, 
+            expire_date: expireDate,
             token: chance.string({ length: 24 }),
             checksum: chance.string(),
             verify_count: chance.integer({ min: 0 }),
