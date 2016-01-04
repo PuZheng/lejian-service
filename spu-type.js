@@ -9,17 +9,23 @@ var path = require('path');
 var config = require('./config.js');
 var fs = require('mz/fs');
 var logger = require('./logger.js');
+var urljoin = require('url-join');
+var _ = require('lodash');
+var cofy = require('cofy');
+var tmp = require('tmp');
+
+var _jsonify = function *(spuType) {
+	return _.assign(spuType.toJSON(), {
+		spuCnt: yield spuType.getSpuCnt(),
+	});
+};
 
 router.get('/list', function *(next) {
     var c = (yield models.SPUType.fetchAll());
     var data = (yield c.map(function (spuType) {
-        var json = spuType.toJSON();
-        return function *() {
-            json.spuCnt = yield spuType.getSpuCnt();
-            return json;
-        };
+		return _jsonify(spuType);
     }));
-     
+
     this.body = {
         data: data,
     };
@@ -27,11 +33,19 @@ router.get('/list', function *(next) {
 }).post('/object', koaBody, function *(next) {
     var picPath = this.request.body.picPath;
     if (picPath) {
-        delete this.request.body.picPath;
+        dir = path.join(config.get('assetDir'), 'spu_type_pics');
+        yield utils.assertDir(dir);
+        var targetPath = yield cofy.fn(tmp.tmpName)({
+            dir: dir,
+            prefix: '',
+            postfix: path.extname(picPath)
+        });
+        yield fs.rename(picPath, targetPath);
+        this.request.body.picPath = targetPath;
     }
-    var item;
     try {
-        item = yield models.SPUType.forge(casing.snakeize(this.request.body)).save();
+        var item = yield models.SPUType.forge(casing.snakeize(this.request.body)).save();
+		this.body = yield _jsonify(item);
     } catch (e) {
         if (e.code === 'SQLITE_CONSTRAINT') {
             e.message = '名称已经存在';
@@ -44,18 +58,10 @@ router.get('/list', function *(next) {
         }
         throw e;
     }
-    if (picPath) {
-        dir = path.join(config.get('assetDir'), 'spu_type_pics');
-        yield utils.assertDir(dir);
-        yield fs.rename(picPath, path.join(dir, item.get('id') + path.extname(picPath)));
-    }
-    this.body = item.toJSON();
 }).get('/object/:id', function *(next) {
     try {
         var spuType = yield models.SPUType.forge({ id: this.params.id }).fetch({ require: true });
-        var spuCnt = yield spuType.getSpuCnt();
-        this.body = spuType.toJSON();
-        this.body.spuCnt = spuCnt;
+		this.body = yield _jsonify(spuType);
     } catch (e) {
         if (e.message != 'EmptyResponse') {
             throw e;
@@ -67,15 +73,18 @@ router.get('/list', function *(next) {
         var spuType = yield models.SPUType.forge({ id: this.params.id }).fetch({ require: true });
         var picPath = this.request.body.picPath;
         if (picPath) {
-            delete this.request.body.picPath;
+            dir = path.join(config.get('assetDir'), 'spu_type_pics');
+            yield utils.assertDir(dir);
+            var targetPath = yield cofy.fn(tmp.tmpName)({
+                dir: dir,
+                prefix: '',
+                postfix: path.extname(picPath)
+            });
+            yield fs.rename(picPath, targetPath);
+            this.request.body.picPath = targetPath;
         }
         spuType = yield spuType.save(casing.snakeize(this.request.body));
-        if (picPath) {
-            yield fs.rename(picPath, path.join(config.get('assetDir'), 'spu_type_pics', 
-                                               spuType.get('id') + '.jpg'));
-        }
-        this.body = spuType.toJSON();
-        this.body.spuCnt = yield spuType.getSpuCnt();
+		this.body = yield _jsonify(spuType);
     } catch (e) {
         if (e.message != 'EmptyResponse') {
             throw e;

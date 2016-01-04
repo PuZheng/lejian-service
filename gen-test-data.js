@@ -22,15 +22,20 @@ var shelljs = require('shelljs');
 
 function *genSPUType(dir) {
     var name = chance.word();
+    var picPath = yield cofy.fn(tmp.tmpName)({
+        dir: dir,
+        prefix: '',
+        postfix: '.jpg'
+    });
+    var ws = fs.createWriteStream(picPath);
+    fakeImage(name).pipe(ws);
+    yield cs.wait(ws);
     var id = (yield knex.insert({
         name: name,
         enabled: true,
         weight: chance.integer({ min: 0, max: 5 }),
+        pic_path: picPath,
     }).into('TB_SPU_TYPE'))[0];
-    var picPath = path.join(dir, id + '.jpg');
-    var ws = fs.createWriteStream(picPath);
-    fakeImage(name).pipe(ws);
-    yield *cs.wait(ws);
     return id;
 }
 
@@ -56,6 +61,14 @@ function *genRetailer(dir) {
     var name = chance.word();
     logger.info('CREATING RETAILER ' + name);
     var lnglat = fakeLnglat();
+    var picPath = yield cofy.fn(tmp.tmpName)({
+        dir: dir,
+        prefix: '',
+        postfix: '.jpg'
+    });
+    var ws = fs.createWriteStream(picPath);
+    fakeImage(name).pipe(ws);
+    yield cs.wait(ws);
     var id = (yield knex('TB_RETAILER').insert({
         name: name,
         desc: chance.paragraph(),
@@ -65,11 +78,8 @@ function *genRetailer(dir) {
         rating: chance.integer({ min: 1, max: 5 }),
         lng: lnglat.lng,
         lat: lnglat.lat,
+        pic_path: picPath,
     }))[0];
-    var picPath = path.join(dir, '' + id + '.jpg');
-    var ws = fs.createWriteStream(picPath);
-    fakeImage(name).pipe(ws);
-    yield cs.wait(ws);
     return id;
 }
 
@@ -92,7 +102,7 @@ function *genSPU(vendorId, spuTypes) {
     shelljs.exec('rm -rf ' + dir);
     yield utils.assertDir(dir);
     for (var k = 0; k < chance.integer({ min: 1, max: 4 }); ++k) {
-        var picPath = (yield cofy.fn(tmp.tmpName)({ dir: dir, postfix: '.jpg', prefix: '' }));
+        var picPath = yield cofy.fn(tmp.tmpName)({ dir: dir, postfix: '.jpg', prefix: '' });
         var ws = fs.createWriteStream(picPath);
         fakeImage(name).pipe(ws);
         yield cs.wait(ws);
@@ -109,7 +119,7 @@ function fakeSKUData(spuId) {
         return {
             spu_id: spuId,
             production_date: productionDate,
-            expire_date: expireDate, 
+            expire_date: expireDate,
             token: chance.string({ length: 24 }),
             checksum: chance.string(),
             verify_count: chance.integer({ min: 0 }),
