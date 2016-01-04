@@ -4,7 +4,7 @@ var _ = require('lodash');
 var bounds = [
     // a block of area in HangZhou
     {
-        weight: 1,
+        weight: 100,
         ne: {
             lng: 120.279919,
             lat: 30.300651
@@ -16,7 +16,7 @@ var bounds = [
     },
     // a block of area in BeiJing
     {
-        weight: 1,
+        weight: 100,
         ne: {
             lng: 116.496674,
             lat: 39.955216,
@@ -28,7 +28,7 @@ var bounds = [
     },
     // a huge area in china
     {
-        weight: 98,
+        weight: 1,
         ne: {
             'lng': 116.015625,
             'lat': 39.774769
@@ -45,8 +45,8 @@ var totalWeight = _.sum(bounds.map(function (b) {
 }));
 
 module.exports = function () {
-    var weight = chance.integer({ 
-        min: 0, 
+    var weight = chance.integer({
+        min: 0,
         max: totalWeight
     });
     var acc = 0;

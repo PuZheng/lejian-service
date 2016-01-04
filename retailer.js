@@ -77,6 +77,10 @@ router.get('/list', function *(next) {
         })
     };
 	yield next;
+}).get('/object/:id', function *(next) {
+	var item = yield models.Retailer.forge({ id: this.params.id }).fetch();
+	this.body = yield _jsonify(item);
+	yield next;
 });
 
 exports.app = koa().use(json()).use(router.routes()).use(router.allowedMethods());
