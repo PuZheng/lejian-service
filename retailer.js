@@ -51,18 +51,22 @@ router.get('/list', function *(next) {
     };
     yield next;
 }).post('/object', koaBody, function *(next) {
-    this.request.body;
     var picPath = this.request.body.picPath;
 
     if (picPath) {
-		var targetPath = cofy.fn(tmp.tmpName)({
-			dir: path.join(config.get('assetDir'), 'retailer_pics'),
-			prefix: '',
-			postfix: path.extname(picPath),
+		var targetPath = yield cofy.fn(tmp.tmpName)({
+			template: path.join(config.get('assetDir'), 'retailer_pics', '/XXXXXX' + path.extname(picPath)),
 		});
         yield fs.rename(picPath, targetPath);
 		this.request.body.picPath = targetPath;
     }
+
+	var lnglat = this.request.body.lnglat;
+	if (lnglat) {
+		this.request.body.lng = this.request.body.lnglat[0];
+		this.request.body.lat = this.request.body.lnglat[1];
+	}
+	delete this.request.body.lnglat;
 
     var item = yield models.Retailer.forge(casing.snakeize(this.request.body)).save();
 	this.body = yield _jsonify(item);
@@ -77,9 +81,31 @@ router.get('/list', function *(next) {
         })
     };
 	yield next;
+}).param('id', function *(id, next) {
+	this.item = yield models.Retailer.forge({ id: this.params.id }).fetch();
+	if (!this.item) {
+		return (this.status = 404);
+	}
+	yield next;
 }).get('/object/:id', function *(next) {
-	var item = yield models.Retailer.forge({ id: this.params.id }).fetch();
-	this.body = yield _jsonify(item);
+	this.body = yield _jsonify(this.item);
+	yield next;
+}).put('/object/:id', koaBody, function *(next) {
+	var body = this.request.body;
+	if (body.lnglat) {
+		body.lng = body.lnglat[0];
+		body.lat = body.lnglat[1];
+	}
+	delete body.lnglat;
+	if (body.picPath) {
+		var newPath = yield cofy.fn(tmp.tmpName)({
+			template: path.join(config.get('assetDir'), 'retailer_pics', '/XXXXXX' + path.extname(body.picPath)),
+		});
+        yield fs.rename(body.picPath, newPath);
+		body.picPath = newPath;
+	}
+	this.item = yield this.item.save(casing.snakeize(body));
+	this.body = yield _jsonify(this.item);
 	yield next;
 });
 
