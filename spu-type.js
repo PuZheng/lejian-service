@@ -9,7 +9,6 @@ var path = require('path');
 var config = require('./config.js');
 var fs = require('mz/fs');
 var logger = require('./logger.js');
-var urljoin = require('url-join');
 var _ = require('lodash');
 var cofy = require('cofy');
 var tmp = require('tmp');
@@ -58,39 +57,32 @@ router.get('/list', function *(next) {
         }
         throw e;
     }
+}).param('id', function *(id, next) {
+    this.spuType = yield models.SPUType.forge({ id: id }).fetch();
+    if (!this.spuType) {
+        return (this.status = 404);
+    }
+    yield next;
 }).get('/object/:id', function *(next) {
-    try {
-        var spuType = yield models.SPUType.forge({ id: this.params.id }).fetch({ require: true });
-		this.body = yield _jsonify(spuType);
-    } catch (e) {
-        if (e.message != 'EmptyResponse') {
-            throw e;
-        }
-        this.status = 404;
-    }
+    this.body = yield _jsonify(this.spuType);
+    yield next;
 }).put('/object/:id', koaBody, function *(next) {
-    try {
-        var spuType = yield models.SPUType.forge({ id: this.params.id }).fetch({ require: true });
-        var picPath = this.request.body.picPath;
-        if (picPath) {
-            dir = path.join(config.get('assetDir'), 'spu_type_pics');
-            yield utils.assertDir(dir);
-            var targetPath = yield cofy.fn(tmp.tmpName)({
-                dir: dir,
-                prefix: '',
-                postfix: path.extname(picPath)
-            });
-            yield fs.rename(picPath, targetPath);
-            this.request.body.picPath = targetPath;
-        }
-        spuType = yield spuType.save(casing.snakeize(this.request.body));
-		this.body = yield _jsonify(spuType);
-    } catch (e) {
-        if (e.message != 'EmptyResponse') {
-            throw e;
-        }
-        this.status = 404;
+    var body = this.request.body;
+    var picPath = body.picPath;
+
+    if (picPath) {
+        dir = path.join(config.get('assetDir'), 'spu_type_pics');
+        yield utils.assertDir(dir);
+        var targetPath = yield cofy.fn(tmp.tmpName)({
+            dir: dir,
+            prefix: '',
+            postfix: path.extname(picPath)
+        });
+        yield fs.rename(picPath, targetPath);
+        body.picPath = targetPath;
     }
+    this.spuType = yield this.spuType.save(casing.snakeize(body));
+    this.body = yield _jsonify(this.spuType);
 });
 
 
