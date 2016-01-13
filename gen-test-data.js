@@ -19,6 +19,8 @@ var tmp = require('tmp');
 var argv = require('yargs').argv;
 var fakeLnglat = require('./fake-lnglat.js');
 var shelljs = require('shelljs');
+var bcrypt = require('bcrypt');
+var defs = require('./defs.js');
 
 function *genSPUType(dir) {
     var name = chance.word();
@@ -110,6 +112,19 @@ function *genSPU(vendorId, spuTypes) {
     return spuId;
 }
 
+function *genUsers() {
+	for (var i = 0; i < 64; ++i) {
+		var s = 'test' + i;
+		var salt = yield cofy.fn(bcrypt.genSalt)(10);
+		var hash = yield cofy.fn(bcrypt.hash)(s, salt);
+		yield knex('TB_USER').insert({
+			email: s + '@lejian.com',
+			password: hash,
+			role: defs.roles.User,
+		});
+	}
+}
+
 function fakeSKUData(spuId) {
     var msInWeek = 7 * 24 * 3600 * 1000;
     return function () {
@@ -134,6 +149,7 @@ if (require.main === module) {
         'use strict';
         yield initDB(knex);
         yield setupAdmin(knex);
+		yield genUsers();
         let dir = path.join(conf.get('assetDir'), 'spu_type_pics');
         shelljs.exec('rm -rf ' + dir);
         if (!(yield fs.exists(dir))) {

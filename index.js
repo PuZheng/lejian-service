@@ -17,6 +17,14 @@ if (require.main === module) {
     fs.readFile(config.get('publicKey'), function (err, secret) {
         var app = koa();
         app.use(error())
+        .use(koaLogger(logger, {
+            // which level you want to use for logging?
+            // default is info
+            level: 'info',
+            // this is optional. Here you can provide request time in ms,
+            // and all requests longer than specified time will have level 'warn'
+            timeLimit: 100
+        }))
         .use(jwt({
             secret: secret,
             algorithm: 'RS256',
@@ -28,14 +36,6 @@ if (require.main === module) {
             );
         }))
         .use(cors())
-        .use(koaLogger(logger, {
-            // which level you want to use for logging?
-            // default is info
-            level: 'info',
-            // this is optional. Here you can provide request time in ms,
-            // and all requests longer than specified time will have level 'warn'
-            timeLimit: 100
-        }))
         .use(mount('/assets', require('./assets.js').app))
         .use(mount('/auth', require('./auth.js').app))
         .use(mount('/vendor', require('./vendor.js').app))
