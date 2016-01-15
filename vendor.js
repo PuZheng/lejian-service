@@ -28,6 +28,7 @@ router.get('/list', function *(next) {
         }
         throw e;
     }
+	yield next;
 }).get('/object/:id', function *(next) {
     try {
         var item = yield models.Vendor.forge({ id: this.params.id }).fetch({ require: true });
@@ -38,6 +39,7 @@ router.get('/list', function *(next) {
         }
         this.status = 404;
     }
+	yield next;
 }).put('/object/:id', koaBody, function *(next) {
     try {
         var item = yield models.Vendor.forge({ id: this.params.id }).fetch({ require: true });
@@ -49,7 +51,8 @@ router.get('/list', function *(next) {
         }
         this.status = 404;
     }
-    
+
+	yield next;
 });
 
 exports.app = koa().use(json()).use(router.routes()).use(router.allowedMethods());

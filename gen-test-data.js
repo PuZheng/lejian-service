@@ -1,4 +1,4 @@
-#! /usr/bin/env node
+"strict mode";
 
 var initDB = require('./init-db.js');
 var co = require('co');
@@ -19,10 +19,10 @@ var tmp = require('tmp');
 var argv = require('yargs').argv;
 var fakeLnglat = require('./fake-lnglat.js');
 var shelljs = require('shelljs');
-var bcrypt = require('bcrypt');
 var defs = require('./defs.js');
+var genHash = require('./gen-hash.js');
 
-function *genSPUType(dir) {
+var genSPUType = function *(dir) {
     var name = chance.word();
     var picPath = yield cofy.fn(tmp.tmpName)({
         dir: dir,
@@ -39,7 +39,7 @@ function *genSPUType(dir) {
         pic_path: picPath,
     }).into('TB_SPU_TYPE'))[0];
     return id;
-}
+};
 
 function *genVendor() {
     var name = chance.word();
@@ -115,11 +115,9 @@ function *genSPU(vendorId, spuTypes) {
 function *genUsers() {
 	for (var i = 0; i < 64; ++i) {
 		var s = 'test' + i;
-		var salt = yield cofy.fn(bcrypt.genSalt)(10);
-		var hash = yield cofy.fn(bcrypt.hash)(s, salt);
 		yield knex('TB_USER').insert({
 			email: s + '@lejian.com',
-			password: hash,
+			password: yield genHash(s),
 			role: defs.roles.User,
 		});
 	}
@@ -146,7 +144,7 @@ function fakeSKUData(spuId) {
 if (require.main === module) {
     var knex = require('./knex.js');
     co(function *() {
-        'use strict';
+		"use strict";
         yield initDB(knex);
         yield setupAdmin(knex);
 		yield genUsers();
