@@ -32,7 +32,7 @@ router.get('/list', function *(next) {
 }).post('/object', koaBody, function *(next) {
     var picPath = this.request.body.picPath;
     if (picPath) {
-        dir = path.join(config.get('assetDir'), 'spu_type_pics');
+        var dir = path.join(config.get('assetDir'), 'spu_type_pics');
         yield utils.assertDir(dir);
         var targetPath = yield cofy.fn(tmp.tmpName)({
             dir: dir,
@@ -46,6 +46,7 @@ router.get('/list', function *(next) {
         var item = yield models.SPUType.forge(casing.snakeize(this.request.body)).save();
 		this.body = yield _jsonify(item);
     } catch (e) {
+		// TODO only acceptable when using sqlite
         if (e.code === 'SQLITE_CONSTRAINT') {
             e.message = '名称已经存在';
             this.status = 403;
@@ -57,6 +58,7 @@ router.get('/list', function *(next) {
         }
         throw e;
     }
+	yield next;
 }).param('id', function *(id, next) {
     this.spuType = yield models.SPUType.forge({ id: id }).fetch();
     if (!this.spuType) {
@@ -71,7 +73,7 @@ router.get('/list', function *(next) {
     var picPath = body.picPath;
 
     if (picPath) {
-        dir = path.join(config.get('assetDir'), 'spu_type_pics');
+        var dir = path.join(config.get('assetDir'), 'spu_type_pics');
         yield utils.assertDir(dir);
         var targetPath = yield cofy.fn(tmp.tmpName)({
             dir: dir,
@@ -83,6 +85,7 @@ router.get('/list', function *(next) {
     }
     this.spuType = yield this.spuType.save(casing.snakeize(body));
     this.body = yield _jsonify(this.spuType);
+	yield next;
 });
 
 
