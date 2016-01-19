@@ -14,7 +14,6 @@ var knex = require('./knex.js');
 var bookshelf = require('bookshelf')(knex);
 var path = require('path');
 var utils = require('./utils.js');
-var mv = require('mv');
 var tmp = require('tmp');
 var fs = require('mz/fs');
 
@@ -97,12 +96,12 @@ router.get('/list', function *(next) {
 
     var item = yield models.SPU.forge(casing.snakeize(this.request.body)).save();
     if (picPaths) {
-        dir = path.join(config.get('assetDir'), 'spu_pics', item.get('id') + '');
+        var dir = path.join(config.get('assetDir'), 'spu_pics', item.get('id') + '');
         yield utils.assertDir(dir);
         for (var picPath of picPaths) {
-            
+
             var tmpName = yield cofy.fn(tmp.tmpName)({
-                dir: dir, 
+                dir: dir,
                 postfix: path.extname(picPath),
                 prefix: '',
             });
@@ -113,10 +112,11 @@ router.get('/list', function *(next) {
         yield item.retailerList().attach(retailerIds);
     }
     this.body = item.toJSON();
+	yield next;
 }).get('/object/:id', function *(next) {
     try {
         var item = yield models.SPU.forge({ id: this.params.id }).fetch({ require: true, withRelated: [ 'retailerList' ] });
-        var picPaths = yield item.getPicPaths(); 
+        var picPaths = yield item.getPicPaths();
         this.body = _.assign(item.toJSON(), {
             picPaths: picPaths,
             pics: picPaths.map(function (picPath) {
@@ -132,6 +132,7 @@ router.get('/list', function *(next) {
         }
         this.status = 404;
     }
+	yield next;
 }).put('/object/:id', koaBody, function *(next) {
     try {
         var spu = yield models.SPU.forge({ id: this.params.id }).fetch({
@@ -154,9 +155,9 @@ router.get('/list', function *(next) {
             var path_;
             for (path_ of picPaths) {
                 if (origPicPaths.indexOf(path_) === -1) {
-                    var dest = yield cofy.fn(tmp.tmpName)({ 
-                        dir: dir, 
-                        prefix: '', 
+                    var dest = yield cofy.fn(tmp.tmpName)({
+                        dir: dir,
+                        prefix: '',
                         postfix: path.extname(path_),
                     });
                     yield fs.rename(path_, dest);
@@ -179,7 +180,7 @@ router.get('/list', function *(next) {
             });
             yield spu.retailerList().detach(retailerIdsDeleting, { transacting: t });
             yield spu.retailerList().attach(retailerIds, { transacting: t });
-        } 
+        }
         yield t.commit();
         this.body = spu.toJSON() ;
         this.body.picPaths = yield spu.getPicPaths();
@@ -189,6 +190,7 @@ router.get('/list', function *(next) {
         }
         this.status = 404;
     }
+	yield next;
 }).get('/auto-complete/:kw', function *(next) {
     var c = yield models.SPU.where('name', 'like', '%%' + this.params.kw + '%%').fetchAll();
     this.body = {
@@ -198,6 +200,7 @@ router.get('/list', function *(next) {
             };
         })
     };
+	yield next;
 });
 
 exports.app = koa().use(json()).use(router.routes())

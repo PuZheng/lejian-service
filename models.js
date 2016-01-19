@@ -16,6 +16,8 @@ var SPUType = bookshelf.Model.extend({
             path: ret.picPath,
             url: urljoin(config.get('site'), ret.picPath),
         };
+		// sqlite will store boolean field as 1|0
+		ret.enabled = !!ret.enabled;
         return ret;
     },
     getSpuCnt: function () {
@@ -25,9 +27,6 @@ var SPUType = bookshelf.Model.extend({
 
 var User = bookshelf.Model.extend({
     tableName: 'TB_USER',
-    role: function () {
-        return this.belongsTo(Role, 'role_id');
-    },
     serialize: function () {
         var ret = casing.camelize(bookshelf.Model.prototype.serialize.apply(this));
         return ret;

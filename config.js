@@ -15,7 +15,7 @@ var conf = convict({
     },
     knexOpts: {
         doc: "options for knex",
-        format: function (val) {
+        format: function () {
 
         },
         default: {
@@ -29,7 +29,7 @@ var conf = convict({
     },
     admin: {
         doc: 'system admin account information',
-        format: function (val) {
+        format: function () {
 
         },
         default: {
@@ -67,11 +67,11 @@ var conf = convict({
     }
 });
 
-// Load environment dependent configuration 
+// Load environment dependent configuration
 var env = conf.get('env');
 env != 'development' && conf.loadFile('./config/' + env + '.json');
 
-// Perform validation 
+// Perform validation
 conf.validate({strict: true});
 
 module.exports = conf;

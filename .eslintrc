@@ -1,0 +1,16 @@
+{
+	"ecmaFeatures": {
+		"generators": true,
+		"blockBindings": true,
+		"forOf": true
+	},
+	"env": {
+		"node": true
+	},
+	"rules": {
+		"no-undef": 2,
+		"no-unused-vars": [1, {
+			"varsIgnorePattern": "(^_|logger)"
+		}]
+	}
+}
