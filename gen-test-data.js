@@ -63,6 +63,11 @@ function *genRetailer(dir) {
     var name = chance.word();
     logger.info('CREATING RETAILER ' + name);
     var lnglat = fakeLnglat();
+    var poiId = (yield knex('poi').insert({
+        lng: lnglat.lng,
+        lat: lnglat.lat,
+        addr: chance.address(),
+    }))[0];
     var picPath = yield cofy.fn(tmp.tmpName)({
         dir: dir,
         prefix: '',
@@ -75,12 +80,10 @@ function *genRetailer(dir) {
         name: name,
         desc: chance.paragraph(),
         tel: chance.phone(),
-        addr: chance.address(),
         enabled: chance.bool(),
         rating: chance.integer({ min: 1, max: 5 }),
-        lng: lnglat.lng,
-        lat: lnglat.lat,
         pic_path: picPath,
+        poi_id: poiId,
     }))[0];
     return id;
 }

@@ -54,16 +54,19 @@ var initDB = function (knex) {
         table.string('name').notNullable();
         table.string('desc');
         table.integer('rating');
-        table.float('lng');
-        table.float('lat');
         table.float('tel');
-        table.string('addr');
         table.string('pic_path');
         table.timestamp('created_at').defaultTo(knex.fn.now());
         table.boolean('enabled');
+        table.integer('poi_id').notNullable().references('poi.id');
     }).createTable('retailer_spu', function (table) {
         table.integer('retailer_id').references('TB_RETAILER.id');
         table.integer('spu_id').references('TB_SPU.id');
+    }).createTable('poi', function (table) {
+        table.increments();
+        table.float('lng');
+        table.float('lat');
+        table.string('addr');
     });
 };
 
