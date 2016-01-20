@@ -171,7 +171,7 @@ if (require.main === module) {
 
         for (let i = 0; i < 16; ++i) {
             let vendorId = yield genVendor();
-            for (let j = 0; j < chance.integer({ min: 1, max: 16 }); ++j) {
+            for (let j = 0; j < chance.integer({ min: 1, max: 96 }); ++j) {
                 let spuId = yield genSPU(vendorId, spuTypes);
                 for (var retailer of _.sample(retailers, chance.integer({ min: 1, max: 50 }))) {
                     yield knex('retailer_spu').insert({

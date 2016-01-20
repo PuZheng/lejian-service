@@ -59,7 +59,10 @@ var User = bookshelf.Model.extend({
 var SPU = bookshelf.Model.extend({
     tableName: 'TB_SPU',
     serialize: function () {
-        return casing.camelize(bookshelf.Model.prototype.serialize.apply(this));
+        var ret = casing.camelize(bookshelf.Model.prototype.serialize.apply(this));
+		// sqlite will store boolean field as 1|0
+		ret.enabled = !!ret.enabled;
+		return ret;
     },
     spuType: function () {
         return this.belongsTo(SPUType, 'spu_type_id');
@@ -88,7 +91,9 @@ var SPU = bookshelf.Model.extend({
 var Vendor = bookshelf.Model.extend({
     tableName: 'TB_VENDOR',
     serialize: function () {
-        return casing.camelize(bookshelf.Model.prototype.serialize.apply(this));
+        var ret = casing.camelize(bookshelf.Model.prototype.serialize.apply(this));
+		ret.enabled = !!ret.enabled;
+		return ret;
     },
 });
 
