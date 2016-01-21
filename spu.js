@@ -16,52 +16,146 @@ var path = require('path');
 var utils = require('./utils.js');
 var tmp = require('tmp');
 var fs = require('mz/fs');
+var logger = require('./logger.js');
 
+var QuadTree = require('./quad-tree.js');
+
+
+var makeQuadTree = function () {
+	var quadTree;
+	return function * () {
+		if (!quadTree) {
+			// var c = yield models.Retailer.fetchAll({
+			// 	withRelated: [ 'poi', 'spuList' ],
+			// });
+			var retailers = casing.camelize(yield knex('TB_RETAILER').join('poi', 'TB_RETAILER.poi_id', 'poi.id').select('TB_RETAILER.*', 'poi.lng', 'poi.lat'));
+			retailers = yield retailers.map(function (retailer) {
+				return function *() {
+					var spuList = casing.camelize(yield knex('TB_SPU').join('retailer_spu', 'TB_SPU.id', 'retailer_spu.spu_id').join('TB_RETAILER', 'TB_RETAILER.id', 'retailer_spu.retailer_id').where('TB_RETAILER.id', retailer.id).select('TB_SPU.*'));
+					return _.assign(retailer, {
+						spuList: spuList,
+					});
+				}
+			});
+			quadTree = new QuadTree(retailers.map(function (retailer) {
+				return _.assign({
+					lng: retailer.lng,
+					lat: retailer.lat
+				}, {
+					bundle: retailer,
+				});
+			}));
+			logger.info(`quadtree build ${retailers.length} with pois`);
+		}
+		return quadTree;
+	};
+}();
 
 router.get('/list', function *(next) {
     var query = casing.camelize(this.query);
-    var model = models.SPU;
+	if (query.sortBy === 'distance.desc') {
+		this.body = {
+			reason: 'list can\'t be sorted by distance descendantly'
+		}
+		this.status = 403;
+		yield next;
+		return;
+	}
+	var model = models.SPU.query(function (q) {
+		query.vendorId && q.where('vendor_id', query.vendorId);
+		query.spuTypeId && q.where('spu_type_id', query.spuTypeId);
+		query.rating && q.where('rating', query.rating);
+		query.kw && q.where(function () {
+			this.where('name', 'like', '%%' + query.kw + '%%').orWhere('code', 'like', '%%' + query.kw + '%%');
+		});
+	});
+	var data, totalCount;
 
-    model = model.query(function (q) {
-        query.vendorId && q.where('vendor_id', query.vendorId);
-        query.spuTypeId && q.where('spu_type_id', query.spuTypeId);
-        query.rating && q.where('rating', query.rating);
-        query.kw && q.where(function () {
-            this.where('name', 'like', '%%' + query.kw + '%%').orWhere('code', 'like', '%%' + query.kw + '%%');
-        });
-    });
-    var totalCount = yield model.clone().count();
+	var spuFilter = function (vendorId, spuTypeId, rating) {
+		return function (spu) {
+			return (!vendorId || spu.vendorId == vendorId)
+				&& (!spuTypeId || spu.spuTypeId == spuTypeId)
+				&& (!rating || spu.raing == rating);
+		};
+	}(query.vendorId, query.spuTypeId, query.rating);
 
-    model = model.query(function (q) {
-        q.orderBy.apply(q, (query.sortBy || 'created_at.desc').split('.'));
-        if (query.perPage && query.page) {
-            var perPage = parseInt(query.perPage);
-            var page = parseInt(query.page);
-            q.offset((page - 1) * perPage).limit(perPage);
-        }
-    });
 
-    var c = yield model.fetchAll({
-        withRelated: ['spuType', 'vendor']
-    });
-    var data = yield c.map(function (item) {
-        return function *fillPicPaths() {
-            var picPaths = yield item.getPicPaths();
-            var pics = picPaths.map(function (picPath) {
-                return {
-                    path: picPath,
-                    url: urljoin(config.get('site'), picPath),
-                };
-            });
-            return _.assign(item.toJSON(), {
-                picPaths: picPaths,
-                pics: pics,
-                // TODO this is inappropriate
-                icon: pics[0],
-                retailerCnt: yield item.getRetailerCnt(),
-            });
-        };
-    });
+	if (query.sortBy.startsWith('distance.asc')) {
+		var totalCount = yield model.count();
+		var lnglat = query.lnglat.split(',');
+		var spus = new Map();
+		for (var poi of (yield makeQuadTree()).nearest({
+			lng: parseFloat(lnglat[0]),
+			lat: parseFloat(lnglat[1]),
+		}, query.distance)) {
+			for (var spu of poi.bundle.spuList) {
+				if (spuFilter(spu)) {
+					!spus.has(spu.id) && spus.set(spu.id, poi.distance);
+				}
+			}
+		}
+		var c = yield models.SPU.where('id', 'in', function (spus) {
+			var ret = Array.from(spus.keys());
+			if (query.perPage && query.page) {
+				ret = ret.slice((query.page - 1) * query.perPage, query.page * query.perPage);
+			}
+			return ret;
+		}(spus)).fetchAll({
+			withRelated: ['spuType', 'vendor']
+		});
+		data = _.sortBy(yield c.map(function (item) {
+			return function *() {
+				var picPaths = yield item.getPicPaths();
+				var pics = picPaths.map(function (picPath) {
+					return {
+						path: picPath,
+						url: urljoin(config.get('site'), picPath),
+					};
+				});
+				return _.assign(item.toJSON(), {
+					picPaths: picPaths,
+					pics: pics,
+					// TODO this is inappropriate
+					icon: pics[0],
+					retailerCnt: yield item.getRetailerCnt(),
+					distance: spus.get(item.get('id')),
+				});
+			};
+		}), 'distance');
+	} else {
+		totalCount = yield model.clone().count();
+
+		model = model.query(function (q) {
+			q.orderBy.apply(q, (query.sortBy || 'created_at.desc').split('.'));
+			if (query.perPage && query.page) {
+				var perPage = parseInt(query.perPage);
+				var page = parseInt(query.page);
+				q.offset((page - 1) * perPage).limit(perPage);
+			}
+		});
+
+		c = yield model.fetchAll({
+			withRelated: ['spuType', 'vendor']
+		});
+		data = yield c.map(function (item) {
+			return function *() {
+				var picPaths = yield item.getPicPaths();
+				var pics = picPaths.map(function (picPath) {
+					return {
+						path: picPath,
+						url: urljoin(config.get('site'), picPath),
+					};
+				});
+				return _.assign(item.toJSON(), {
+					picPaths: picPaths,
+					pics: pics,
+					// TODO this is inappropriate
+					icon: pics[0],
+					retailerCnt: yield item.getRetailerCnt(),
+				});
+			};
+		});
+	}
     this.body = {
         data: data,
         totalCount: totalCount,

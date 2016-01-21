@@ -124,8 +124,18 @@ var Retailer = bookshelf.Model.extend({
 
     getSPUCnt: function *() {
         return (yield knex('retailer_spu').where('retailer_id', this.id).count())[0]['count(*)'];
+    },
+    
+    poi: function () {
+        return this.belongsTo(POI, 'poi_id');
     }
+});
 
+var POI = bookshelf.Model.extend({
+    tableName: 'poi',
+    serialize: function () {
+        return casing.camelize(bookshelf.Model.prototype.serialize.apply(this))
+    }
 });
 
 module.exports = {
@@ -135,4 +145,5 @@ module.exports = {
     Vendor: Vendor,
     SKU: SKU,
     Retailer: Retailer,
+    POI: POI,
 };

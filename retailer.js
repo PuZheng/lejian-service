@@ -40,7 +40,7 @@ router.get('/list', function *(next) {
         }
     });
 
-    var c = (yield model.fetchAll());
+    var c = (yield model.fetchAll({ withRelated: [ 'poi' ] }));
     var data = yield (c.map(function (retailer) {
         return _jsonify(retailer);
     }));
