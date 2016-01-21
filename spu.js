@@ -25,9 +25,6 @@ var makeQuadTree = function () {
 	var quadTree;
 	return function * () {
 		if (!quadTree) {
-			// var c = yield models.Retailer.fetchAll({
-			// 	withRelated: [ 'poi', 'spuList' ],
-			// });
 			var retailers = casing.camelize(yield knex('TB_RETAILER').join('poi', 'TB_RETAILER.poi_id', 'poi.id').select('TB_RETAILER.*', 'poi.lng', 'poi.lat'));
 			retailers = yield retailers.map(function (retailer) {
 				return function *() {
@@ -90,7 +87,8 @@ router.get('/list', function *(next) {
 		}, query.distance)) {
 			for (var spu of poi.bundle.spuList) {
 				if (spuFilter(spu)) {
-					!spus.has(spu.id) && spus.set(spu.id, poi.distance);
+					// 至少保证在一米以外
+					!spus.has(spu.id) && spus.set(spu.id, Math.round(poi.distance) || 1);
 				}
 			}
 		}
