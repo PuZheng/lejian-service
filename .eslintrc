@@ -2,7 +2,8 @@
 	"ecmaFeatures": {
 		"generators": true,
 		"blockBindings": true,
-		"forOf": true
+		"forOf": true,
+		"templateStrings": true
 	},
 	"env": {
 		"node": true

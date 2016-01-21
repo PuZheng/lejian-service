@@ -167,12 +167,12 @@ if (require.main === module) {
         if (!(yield fs.exists(dir))) {
             yield mkdirp(dir);
         }
-        for (let i=0; i < 256; ++i) {
+        for (let i=0; i < 3000; ++i) {
             yield genRetailer(dir);
         }
         var retailers = yield knex('TB_RETAILER').select('*');
 
-        for (let i = 0; i < 16; ++i) {
+        for (let i = 0; i < 256; ++i) {
             let vendorId = yield genVendor();
             for (let j = 0; j < chance.integer({ min: 1, max: 96 }); ++j) {
                 let spuId = yield genSPU(vendorId, spuTypes);
