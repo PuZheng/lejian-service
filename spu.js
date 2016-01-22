@@ -68,13 +68,17 @@ router.get('/list', function *(next) {
 	});
 	var data, totalCount;
 
-	var spuFilter = function (vendorId, spuTypeId, rating) {
+	var spuFilter = function (vendorId, spuTypeId, rating, kw) {
+		if (kw) {
+			kw = new RegExp(kw, 'i');
+		}
 		return function (spu) {
 			return (!vendorId || spu.vendorId == vendorId)
 				&& (!spuTypeId || spu.spuTypeId == spuTypeId)
-				&& (!rating || spu.raing == rating);
+				&& (!rating || spu.raing == rating)
+				&& (!kw || spu.name.match(kw) || spu.code.match(kw));
 		};
-	}(query.vendorId, query.spuTypeId, query.rating);
+	}(query.vendorId, query.spuTypeId, query.rating, query.kw);
 
 
 	if (query.sortBy.startsWith('distance.asc')) {
