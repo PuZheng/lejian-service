@@ -13,7 +13,6 @@ var cofy = require('cofy');
 router.post('/', function *(next) {
     var parts = parse(this);
     var part;
-    var filenames = [];
     var paths = [];
     while ((part = yield parts)) {
         if (!part.length) {
@@ -31,7 +30,7 @@ router.post('/', function *(next) {
     this.body = {
         paths: paths,
     };
-    
+	yield next;
 }).get(/(.*)/, function *(next) {
     try {
         var path_ = path.join(config.get('assetDir'), this.params[0]);
@@ -42,6 +41,7 @@ router.post('/', function *(next) {
         }
         this.status = 404;
     }
+	yield next;
 });
 
 module.exports = {

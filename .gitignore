@@ -43,7 +43,9 @@ Session.vim
 .netrwhist
 *~
 
-assets/
+assets/retailer_pics/
+assets/spu_pics/
+assets/spu_type_pics/
 db
-private.pem 
+private.pem
 public.pem
