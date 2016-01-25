@@ -67,7 +67,10 @@ var initDB = function (knex) {
         table.float('lng');
         table.float('lat');
         table.string('addr');
-    });
+    }).createTable('favor', function (table) {
+		table.integer('spu_id').notNullable().references('TB_SPU.id');
+		table.integer('user_id').notNullable().references('TB_USER.id');
+	});
 };
 
 module.exports = initDB;

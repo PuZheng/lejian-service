@@ -31,6 +31,7 @@ if (require.main === module) {
         }).unless(function () {
             return !config.get('jwtEnabled') || (
                 this.method === 'OPTIONS' ||
+				this.method === 'GET' ||
                 this.url.match(/^\/auth/) ||
                 (this.url.match(/^\/assets/) && this.method === 'GET')
             );
@@ -43,6 +44,7 @@ if (require.main === module) {
         .use(mount('/sku', require('./sku.js').app))
         .use(mount('/retailer', require('./retailer.js').app))
         .use(mount('/recommendation', require('./recommendation.js').app))
+        .use(mount('/favor', require('./favor.js').app))
         .use(mount('/spu-type', require('./spu-type.js').app));
         if (config.get('env') === 'development') {
             app.use(slow({ delay: 200 }));
