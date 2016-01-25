@@ -16,8 +16,10 @@ QuadTree.prototype.nearest = function (lnglat, distance) {
 	distance = distance || Infinity;
 
 	return _(this.pois).map(function (poi) {
+		var distance = mercator.distance(poi, lnglat);
+		distance = Math.round(distance) || 1; // 至少是1
 		return _.assign(poi, {
-			distance: mercator.distance(poi, lnglat)
+			distance: distance,
 		});
 	}).filter(function (poi) {
 		return poi.distance < distance;

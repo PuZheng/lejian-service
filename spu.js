@@ -18,35 +18,7 @@ var tmp = require('tmp');
 var fs = require('mz/fs');
 var logger = require('./logger.js');
 
-var QuadTree = require('./quad-tree.js');
-
-
-var makeQuadTree = function () {
-	var quadTree;
-	return function * () {
-		if (!quadTree) {
-			var retailers = casing.camelize(yield knex('TB_RETAILER').join('poi', 'TB_RETAILER.poi_id', 'poi.id').select('TB_RETAILER.*', 'poi.lng', 'poi.lat'));
-			retailers = yield retailers.map(function (retailer) {
-				return function *() {
-					var spuList = casing.camelize(yield knex('TB_SPU').join('retailer_spu', 'TB_SPU.id', 'retailer_spu.spu_id').join('TB_RETAILER', 'TB_RETAILER.id', 'retailer_spu.retailer_id').where('TB_RETAILER.id', retailer.id).select('TB_SPU.*'));
-					return _.assign(retailer, {
-						spuList: spuList,
-					});
-				}
-			});
-			quadTree = new QuadTree(retailers.map(function (retailer) {
-				return _.assign({
-					lng: retailer.lng,
-					lat: retailer.lat
-				}, {
-					bundle: retailer,
-				});
-			}));
-			logger.info(`quadtree build ${retailers.length} with pois`);
-		}
-		return quadTree;
-	};
-}();
+var poiUtils = require('./poi-utils.js');
 
 router.get('/list', function *(next) {
     var query = casing.camelize(this.query);
@@ -80,15 +52,14 @@ router.get('/list', function *(next) {
 		};
 	}(query.vendorId, query.spuTypeId, query.rating, query.kw);
 
-
 	if (query.sortBy.startsWith('distance.asc')) {
 		var totalCount = yield model.count();
 		var lnglat = query.lnglat.split(',');
 		var spus = new Map();
-		for (var poi of (yield makeQuadTree()).nearest({
+		for (var poi of (yield poiUtils.nearbyPOIList({
 			lng: parseFloat(lnglat[0]),
 			lat: parseFloat(lnglat[1]),
-		}, query.distance)) {
+		}, query.distance))) {
 			for (var spu of poi.bundle.spuList) {
 				if (spuFilter(spu)) {
 					// 至少保证在一米以外
@@ -139,6 +110,16 @@ router.get('/list', function *(next) {
 		c = yield model.fetchAll({
 			withRelated: ['spuType', 'vendor']
 		});
+
+		var lnglat = query.lnglat && function (p) {
+			return {
+				lng: p[0],
+				lat: p[1]
+			};
+		}(query.lnglat.split(','));
+		logger.error(query.distance || config.get('nearbyLimit'));
+		var nearbySPUs = lnglat && (yield poiUtils.nearbySPUList(lnglat, query.distance || config.get('nearbyLimit')));
+		logger.error(nearbySPUs);
 		data = yield c.map(function (item) {
 			return function *() {
 				var picPaths = yield item.getPicPaths();
@@ -148,12 +129,17 @@ router.get('/list', function *(next) {
 						url: urljoin(config.get('site'), picPath),
 					};
 				});
+				var distance;
+				if (nearbySPUs && item.get('id') in nearbySPUs) {
+					distance = nearbySPUs[item.get('id')].distance;
+				}
 				return _.assign(item.toJSON(), {
 					picPaths: picPaths,
 					pics: pics,
 					// TODO this is inappropriate
 					icon: pics[0],
 					retailerCnt: yield item.getRetailerCnt(),
+					distance: distance,
 				});
 			};
 		});
