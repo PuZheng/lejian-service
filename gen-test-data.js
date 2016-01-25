@@ -21,6 +21,7 @@ var fakeLnglat = require('./fake-lnglat.js');
 var shelljs = require('shelljs');
 var defs = require('./defs.js');
 var genHash = require('./gen-hash.js');
+var moment = require('moment');
 
 var genSPUType = function *(dir) {
     var name = chance.word();
@@ -97,11 +98,11 @@ function *genSPU(vendorId, spuTypes) {
         code: chance.natural() + '',
         msrp: chance.floating({ min: 1, max: 1000, fixed: 2 }),
         vendor_id: vendorId,
-        rating: chance.integer({ min: 1, max: 5 , }),
+        rating: chance.integer({ min: 1, max: 5 }),
         enabled: chance.bool(),
         desc: chance.paragraph(),
         spu_type_id: _.sample(spuTypes).id,
-        created_at: fakeTime.time(-msInWeek, 0),
+        created_at: moment(fakeTime.time(-msInWeek, 0)).format('YYYY-MM-DD HH:mm:ss'),
     }).into('TB_SPU'))[0];
     var dir = path.join(conf.get('assetDir'), 'spu_pics', '' + spuId);
     shelljs.exec('rm -rf ' + dir);
@@ -116,7 +117,7 @@ function *genSPU(vendorId, spuTypes) {
 }
 
 function *genUsers() {
-	for (var i = 0; i < 64; ++i) {
+	for (var i = 0; i < (argv.q? 4: 64); ++i) {
 		var s = 'test' + i;
 		yield knex('TB_USER').insert({
 			email: s + '@lejian.com',
@@ -139,7 +140,7 @@ function fakeSKUData(spuId) {
             token: chance.string({ length: 24 }),
             checksum: chance.string(),
             verify_count: chance.integer({ min: 0 }),
-            last_verified_at: fakeTime.time(-msInWeek, 0),
+            last_verified_at: moment(fakeTime.time(-msInWeek, 0)).format('YYYY-MM-DD HH:mm:ss'),
         };
     };
 }
@@ -167,14 +168,15 @@ if (require.main === module) {
         if (!(yield fs.exists(dir))) {
             yield mkdirp(dir);
         }
-        for (let i=0; i < 3000; ++i) {
+        for (let i=0; i < (argv.q? 16: 3000); ++i) {
             yield genRetailer(dir);
         }
         var retailers = yield knex('TB_RETAILER').select('*');
 
-        for (let i = 0; i < 256; ++i) {
+		var users = yield knex('TB_USER').select('*');
+        for (let i = 0; i < (argv.q? 16: 256); ++i) {
             let vendorId = yield genVendor();
-            for (let j = 0; j < chance.integer({ min: 1, max: 96 }); ++j) {
+            for (let j = 0; j < chance.integer({ min: 1, max: argv.q? 8: 96 }); ++j) {
                 let spuId = yield genSPU(vendorId, spuTypes);
                 for (var retailer of _.sample(retailers, chance.integer({ min: 1, max: 50 }))) {
                     yield knex('retailer_spu').insert({
@@ -186,6 +188,15 @@ if (require.main === module) {
                     var skuData = _.times(chance.integer({ min: 50, max: 100 }), fakeSKUData(spuId));
                     yield knex.insert(skuData).into('TB_SKU');
                 }
+				for (let m = 0; m < chance.integer({ min: 1, max: 10 }); ++m) {
+					yield knex('comment').insert({
+						spu_id: spuId,
+						user_id: _.sample(users).id,
+						created_at: moment(chance.date({ year: new Date().getFullYear() - chance.integer({ min: 0, max: 3 }) })).format('YYYY-MM-DD HH:mm:ss'),
+						content: chance.paragraph(),
+						rating: chance.integer({ min: 1, max: 5 }),
+					})
+				}
             }
         }
     }).then(function () {
