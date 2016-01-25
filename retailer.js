@@ -9,7 +9,6 @@ var koaBody = require('koa-body')();
 var path = require('path');
 var fs = require('mz/fs');
 var config = require('./config.js');
-var urljoin = require('url-join');
 var cofy = require('cofy');
 var tmp = require('tmp');
 
@@ -21,7 +20,7 @@ var _jsonify = function *(retailer) {
 
 router.get('/list', function *(next) {
     var model = models.Retailer;
-    query = casing.camelize(this.query);
+    var query = casing.camelize(this.query);
 
     model = model.query(function (q) {
 		query.rating && q.where('rating', query.rating);
