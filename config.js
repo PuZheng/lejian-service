@@ -64,7 +64,13 @@ var conf = convict({
         format: Boolean,
         default: true,
         env: 'JWT_ENABLED'
-    }
+    },
+	nearbyLimit: {
+		doc: 'define what is "nearby"?',
+		format: Number,
+		default: 10000,
+		env: 'NEARBY_LIMIT',
+	}
 });
 
 // Load environment dependent configuration
