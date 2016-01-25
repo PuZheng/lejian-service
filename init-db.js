@@ -71,6 +71,13 @@ var initDB = function (knex) {
 		table.integer('spu_id').notNullable().references('TB_SPU.id');
 		table.integer('user_id').notNullable().references('TB_USER.id');
 		table.unique(['spu_id', 'user_id']);
+	}).createTable('comment', function (table) {
+        table.increments();
+		table.integer('spu_id').notNullable().references('TB_SPU.id');
+		table.integer('user_id').notNullable().references('TB_USER.id');
+		table.string('content');
+        table.integer('rating');
+        table.timestamp('created_at').defaultTo(knex.fn.now());
 	});
 };
 

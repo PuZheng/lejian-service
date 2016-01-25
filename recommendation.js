@@ -67,6 +67,7 @@ router.get('/:id', function *(next) {
 				distance: distance,
 				favored: user && (yield item.favored(user.id)),
 				favorCnt: yield item.getFavorCnt(),
+				commentCnt: yield item.getCommentCnt(),
 			});
 		};
 	});

@@ -45,6 +45,7 @@ if (require.main === module) {
         .use(mount('/retailer', require('./retailer.js').app))
         .use(mount('/recommendation', require('./recommendation.js').app))
         .use(mount('/favor', require('./favor.js').app))
+        .use(mount('/comment', require('./comment.js').app))
         .use(mount('/spu-type', require('./spu-type.js').app));
         if (config.get('env') === 'development') {
             app.use(slow({ delay: 200 }));

@@ -29,6 +29,7 @@ var User = bookshelf.Model.extend({
     tableName: 'TB_USER',
     serialize: function () {
         var ret = casing.camelize(bookshelf.Model.prototype.serialize.apply(this));
+		delete ret.password;
         return ret;
     },
 }, {
@@ -94,6 +95,9 @@ var SPU = bookshelf.Model.extend({
 	},
 	getFavorCnt: function *() {
 		return (yield knex('favor').where('spu_id', '' + this.id).count())[0]['count(*)'];
+	},
+	getCommentCnt: function *() {
+		return (yield knex('comment').where('spu_id', '' + this.id).count())[0]['count(*)'];
 	}
 });
 
@@ -147,6 +151,19 @@ var POI = bookshelf.Model.extend({
     }
 });
 
+var Comment = bookshelf.Model.extend({
+    tableName: 'comment',
+    serialize: function () {
+        return casing.camelize(bookshelf.Model.prototype.serialize.apply(this));
+    },
+	user: function () {
+		return this.belongsTo(User, 'user_id');
+	},
+	spu: function () {
+		return this.belongsTo(SPU, 'spu_id');
+	}
+})
+
 module.exports = {
     SPUType: SPUType,
     User: User,
@@ -155,4 +172,5 @@ module.exports = {
     SKU: SKU,
     Retailer: Retailer,
     POI: POI,
+	Comment: Comment,
 };

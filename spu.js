@@ -96,6 +96,7 @@ router.get('/list', function *(next) {
 					distance: spus.get(item.get('id')),
 					favored: user && (yield item.favored(user.id)),
 					favorCnt: yield item.getFavorCnt(),
+					commentCnt: yield item.getCommentCnt(),
 				});
 			};
 		}), 'distance');
@@ -144,6 +145,7 @@ router.get('/list', function *(next) {
 					distance: distance,
 					favored: user && (yield item.favored(user.id)),
 					favorCnt: yield item.getFavorCnt(),
+					commentCnt: yield item.getCommentCnt(),
 				});
 			};
 		});
