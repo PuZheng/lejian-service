@@ -44,6 +44,7 @@ router.get('/:id', function *(next) {
 		};
 	}(query.lnglat.split(','));
 	var nearbySPUs = lnglat && (yield poiUtils.nearbySPUList(lnglat, query.distance || config.get('nearbyLimit')));
+	var user = this.state && this.state.user;
 	var	data = yield c.map(function (item) {
 		return function *() {
 			var picPaths = yield item.getPicPaths();
@@ -64,6 +65,8 @@ router.get('/:id', function *(next) {
 				icon: pics[0],
 				retailerCnt: yield item.getRetailerCnt(),
 				distance: distance,
+				favored: user && (yield item.favored(user.id)),
+				favorCnt: yield item.getFavorCnt(),
 			});
 		};
 	});

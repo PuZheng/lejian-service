@@ -52,6 +52,8 @@ router.get('/list', function *(next) {
 		};
 	}(query.vendorId, query.spuTypeId, query.rating, query.kw);
 
+	var user = this.state && this.state.user;
+
 	if (query.sortBy.startsWith('distance.asc')) {
 		var totalCount = yield model.count();
 		var lnglat = query.lnglat.split(',');
@@ -92,6 +94,8 @@ router.get('/list', function *(next) {
 					icon: pics[0],
 					retailerCnt: yield item.getRetailerCnt(),
 					distance: spus.get(item.get('id')),
+					favored: user && (yield item.favored(user.id)),
+					favorCnt: yield item.getFavorCnt(),
 				});
 			};
 		}), 'distance');
@@ -138,6 +142,8 @@ router.get('/list', function *(next) {
 					icon: pics[0],
 					retailerCnt: yield item.getRetailerCnt(),
 					distance: distance,
+					favored: user && (yield item.favored(user.id)),
+					favorCnt: yield item.getFavorCnt(),
 				});
 			};
 		});

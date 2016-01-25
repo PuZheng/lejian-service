@@ -31,7 +31,7 @@ if (require.main === module) {
         }).unless(function () {
             return !config.get('jwtEnabled') || (
                 this.method === 'OPTIONS' ||
-				this.method === 'GET' ||
+				(this.method === 'GET' && !this.header.authorization) ||
                 this.url.match(/^\/auth/) ||
                 (this.url.match(/^\/assets/) && this.method === 'GET')
             );
