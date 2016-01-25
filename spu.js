@@ -117,9 +117,7 @@ router.get('/list', function *(next) {
 				lat: p[1]
 			};
 		}(query.lnglat.split(','));
-		logger.error(query.distance || config.get('nearbyLimit'));
 		var nearbySPUs = lnglat && (yield poiUtils.nearbySPUList(lnglat, query.distance || config.get('nearbyLimit')));
-		logger.error(nearbySPUs);
 		data = yield c.map(function (item) {
 			return function *() {
 				var picPaths = yield item.getPicPaths();

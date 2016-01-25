@@ -37,7 +37,6 @@ var nearbyPOIList = function * (p, distance) {
 
 var nearbySPUList = function * (p, distance) {
 	var nearbyPOIs = yield nearbyPOIList(p, distance);
-	logger.error(nearbyPOIs);
 	var ret = new Map();
 	if (!_.isEmpty(nearbyPOIs)) {
 		nearbyPOIs.forEach(function (poi) {

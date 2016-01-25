@@ -11,7 +11,7 @@ var koaBody = require('koa-body')();
 
 router.get('/list', function *(next) {
     var model = models.SKU;
-    query = casing.camelize(this.query);
+    var query = casing.camelize(this.query);
 
     model = model.query(function (q) {
         query.unexpiredOnly === '1' && q.where('expire_date', '>', Date.now());
@@ -76,6 +76,7 @@ router.get('/list', function *(next) {
 }).post('/object', koaBody, function *(next) {
     var item = yield models.SKU.forge(casing.snakeize(this.request.body)).save();
     this.body = item.toJSON();
+	yield next;
 }).get('/object/:id', function *(next) {
     var item = yield models.SKU.forge({ id: this.params.id }).fetch({ withRelated: [ 'spu' ] });
     if (!item) {
