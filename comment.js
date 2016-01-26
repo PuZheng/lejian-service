@@ -12,7 +12,8 @@ router.post('/object', koaBody, function *(next) {
 		content: this.request.body.content,
 		rating: this.request.body.rating,
     }).save();
-    this.body = comment.toJSON();
+	// this may seem silly, but must fetch again to get "created_at"
+    this.body = (yield models.Comment.forge('id', comment.get('id')).fetch({ withRelated: [ 'user' ] })).toJSON();
     yield next;
 }).get('/list', function *(next) {
 	this.body = {
