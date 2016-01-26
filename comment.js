@@ -6,7 +6,6 @@ var logger = require('./logger.js');
 var koaBody = require('koa-body')();
 
 router.post('/object', koaBody, function *(next) {
-	logger.error(this.state.user);
     var comment = yield models.Comment.forge({
         spu_id: this.request.body.spuId,
         user_id: this.state.user.id,
