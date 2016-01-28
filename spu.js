@@ -20,8 +20,36 @@ var logger = require('./logger.js');
 
 var poiUtils = require('./poi-utils.js');
 
+var jsonizeSPU = function *(spu, user, nearbySPUs) {
+	var picPaths = yield spu.getPicPaths();
+	var pics = picPaths.map(function (picPath) {
+		return {
+			path: picPath,
+			url: urljoin(config.get('site'), picPath),
+		};
+	});
+	var distance;
+	if (nearbySPUs && nearbySPUs.has(spu.get('id'))) {
+		distance = nearbySPUs.get(spu.get('id')).distance;
+	}
+	return _.assign(spu.toJSON(), {
+		picPaths: picPaths,
+		pics: pics,
+		// TODO this is inappropriate
+		icon: pics[0],
+		retailerCnt: yield spu.getRetailerCnt(),
+		distance: distance,
+		favored: user && (yield spu.favored(user.id)),
+		favorCnt: yield spu.getFavorCnt(),
+		commentCnt: yield spu.getCommentCnt(),
+	});
+
+}
+
 router.get('/list', function *(next) {
     var query = casing.camelize(this.query);
+	query.sortBy = query.sortBy || 'created_at.desc';
+
 	if (query.sortBy === 'distance.desc') {
 		this.body = {
 			reason: 'list can\'t be sorted by distance descendantly'
@@ -40,71 +68,49 @@ router.get('/list', function *(next) {
 	});
 	var data, totalCount;
 
-	var spuFilter = function (vendorId, spuTypeId, rating, kw) {
-		if (kw) {
-			kw = new RegExp(kw, 'i');
-		}
-		return function (spu) {
-			return (!vendorId || spu.vendorId == vendorId)
-				&& (!spuTypeId || spu.spuTypeId == spuTypeId)
-				&& (!rating || spu.raing == rating)
-				&& (!kw || spu.name.match(kw) || spu.code.match(kw));
-		};
-	}(query.vendorId, query.spuTypeId, query.rating, query.kw);
-
 	var user = this.state && this.state.user;
+
+	var lnglat = query.lnglat && function (p) {
+		return {
+			lng: parseFloat(p[0]),
+			lat: parseFloat(p[1])
+		};
+	}(query.lnglat.split(','));
 
 	if (query.sortBy.startsWith('distance.asc')) {
 		var totalCount = yield model.count();
-		var lnglat = query.lnglat.split(',');
-		var spus = new Map();
-		for (var poi of (yield poiUtils.nearbyPOIList({
-			lng: parseFloat(lnglat[0]),
-			lat: parseFloat(lnglat[1]),
-		}, query.distance))) {
-			for (var spu of poi.bundle.spuList) {
-				if (spuFilter(spu)) {
-					// 至少保证在一米以外
-					!spus.has(spu.id) && spus.set(spu.id, Math.round(poi.distance) || 1);
-				}
+
+		var nearbySPUs = yield poiUtils.nearbySPUList(lnglat, query.distance, function spuFilter(vendorId, spuTypeId, rating, kw) {
+			if (kw) {
+				kw = new RegExp(kw, 'i');
 			}
-		}
+			return function (spu) {
+				return (!vendorId || spu.vendorId == vendorId)
+				&& (!spuTypeId || spu.spuTypeId == spuTypeId)
+				&& (!rating || spu.raing == rating)
+				&& (!kw || spu.name.match(kw) || spu.code.match(kw));
+			};
+		}(query.vendorId, query.spuTypeId, query.rating, query.kw));
+
 		var c = yield models.SPU.where('id', 'in', function (spus) {
 			var ret = Array.from(spus.keys());
 			if (query.perPage && query.page) {
 				ret = ret.slice((query.page - 1) * query.perPage, query.page * query.perPage);
 			}
 			return ret;
-		}(spus)).fetchAll({
+		}(nearbySPUs)).fetchAll({
 			withRelated: ['spuType', 'vendor']
 		});
 		data = _.sortBy(yield c.map(function (item) {
 			return function *() {
-				var picPaths = yield item.getPicPaths();
-				var pics = picPaths.map(function (picPath) {
-					return {
-						path: picPath,
-						url: urljoin(config.get('site'), picPath),
-					};
-				});
-				return _.assign(item.toJSON(), {
-					picPaths: picPaths,
-					pics: pics,
-					// TODO this is inappropriate
-					icon: pics[0],
-					retailerCnt: yield item.getRetailerCnt(),
-					distance: spus.get(item.get('id')),
-					favored: user && (yield item.favored(user.id)),
-					favorCnt: yield item.getFavorCnt(),
-					commentCnt: yield item.getCommentCnt(),
-				});
+				return yield jsonizeSPU(item, user, nearbySPUs);
 			};
 		}), 'distance');
 	} else {
 		totalCount = yield model.clone().count();
 
 		model = model.query(function (q) {
-			q.orderBy.apply(q, (query.sortBy || 'created_at.desc').split('.'));
+			q.orderBy.apply(q, query.sortBy.split('.'));
 			if (query.perPage && query.page) {
 				var perPage = parseInt(query.perPage);
 				var page = parseInt(query.page);
@@ -116,37 +122,10 @@ router.get('/list', function *(next) {
 			withRelated: ['spuType', 'vendor']
 		});
 
-		var lnglat = query.lnglat && function (p) {
-			return {
-				lng: p[0],
-				lat: p[1]
-			};
-		}(query.lnglat.split(','));
 		var nearbySPUs = lnglat && (yield poiUtils.nearbySPUList(lnglat, query.distance || config.get('nearbyLimit')));
 		data = yield c.map(function (item) {
 			return function *() {
-				var picPaths = yield item.getPicPaths();
-				var pics = picPaths.map(function (picPath) {
-					return {
-						path: picPath,
-						url: urljoin(config.get('site'), picPath),
-					};
-				});
-				var distance;
-				if (nearbySPUs && item.get('id') in nearbySPUs) {
-					distance = nearbySPUs[item.get('id')].distance;
-				}
-				return _.assign(item.toJSON(), {
-					picPaths: picPaths,
-					pics: pics,
-					// TODO this is inappropriate
-					icon: pics[0],
-					retailerCnt: yield item.getRetailerCnt(),
-					distance: distance,
-					favored: user && (yield item.favored(user.id)),
-					favorCnt: yield item.getFavorCnt(),
-					commentCnt: yield item.getCommentCnt(),
-				});
+				return yield jsonizeSPU(item, user, nearbySPUs);
 			};
 		});
 	}
@@ -202,18 +181,15 @@ router.get('/list', function *(next) {
     this.body = item.toJSON();
 	yield next;
 }).get('/object/:id', function *(next) {
+	var lnglat = this.query.lnglat && function (p) {
+		return {
+			lng: parseFloat(p[0]),
+			lat: parseFloat(p[1])
+		};
+	}(this.query.lnglat.split(','));
     try {
         var item = yield models.SPU.forge({ id: this.params.id }).fetch({ require: true, withRelated: [ 'retailerList' ] });
-        var picPaths = yield item.getPicPaths();
-        this.body = _.assign(item.toJSON(), {
-            picPaths: picPaths,
-            pics: picPaths.map(function (picPath) {
-                return {
-                    path: picPath,
-                    url: urljoin(config.get('site'), picPath)
-                };
-            }),
-        });
+		this.body = jsonizeSPU(item, this.state.user, lnglat && poiUtils.nearbySPUList(lnglat, config.get('nearbyLimit')));
     } catch (e) {
         if (e.message != 'EmptyResponse') {
             throw e;
@@ -293,3 +269,4 @@ router.get('/list', function *(next) {
 
 exports.app = koa().use(json()).use(router.routes())
 .use(router.allowedMethods());
+exports.jsonizeSPU = jsonizeSPU;

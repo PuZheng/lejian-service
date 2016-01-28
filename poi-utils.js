@@ -35,14 +35,14 @@ var nearbyPOIList = function * (p, distance) {
 	return (yield makeQuadTree()).nearest(p, distance);
 };
 
-var nearbySPUList = function * (p, distance) {
+var nearbySPUList = function * (p, distance, filter) {
 	var nearbyPOIs = yield nearbyPOIList(p, distance);
 	var ret = new Map();
 	if (!_.isEmpty(nearbyPOIs)) {
 		nearbyPOIs.forEach(function (poi) {
 			for (var spu of poi.bundle.spuList)	{
-				if (!(spu.id in ret)) {
-					ret[spu.id] = _.assign({}, spu, { distance: poi.distance });
+				if (!ret.has(spu.id) && (!filter || filter(spu))) {
+					ret.set(spu.id, _.assign({}, spu, { distance: poi.distance }));
 				}
 			}
 		});

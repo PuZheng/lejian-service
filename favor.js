@@ -6,7 +6,7 @@ var knex = require('./knex.js');
 var logger = require('./logger.js');
 var models = require('./models.js');
 var _ = require('lodash');
-var urljoin = require('url-join');
+var jsonizeSPU = require('./spu.js').jsonizeSPU;
 var poiUtils = require('./poi-utils.js');
 
 router.param('spuId', function *(id, next) {
@@ -48,33 +48,12 @@ router.param('spuId', function *(id, next) {
 
     for (var favor of data) {
         var spu = yield models.SPU.forge('id', favor.spu_id).fetch({ withRelated: [ 'vendor', 'spuType' ] });
-        var picPaths = yield spu.getPicPaths();
-        var pics = picPaths.map(function (picPath) {
-            return {
-                path: picPath,
-                url: urljoin(config.get('site'), picPath),
-            };
-        });
-        var distance;
-        if (nearbySPUs && spu.get('id') in nearbySPUs) {
-            distance = nearbySPUs[spu.get('id')].distance;
-        }
-        favor.spu = _.assign(spu.toJSON(), {
-            picPaths: picPaths,
-            pics: pics,
-            // TODO this is inappropriate
-            icon: pics[0],
-            retailerCnt: yield spu.getRetailerCnt(),
-            distance: distance,
-            favored: user && (yield spu.favored(user.id)),
-            favorCnt: yield spu.getFavorCnt(),
-            commentCnt: yield spu.getCommentCnt(),
-        });
+		favor.spu = yield jsonizeSPU(spu, user, nearbySPUs);
     }
     this.body = {
         data: data
     };
-    yield next;	
+    yield next;
 });
 
 exports.app = koa().use(json()).use(router.routes()).use(router.allowedMethods());
