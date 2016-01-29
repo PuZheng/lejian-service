@@ -12,6 +12,7 @@ var config = require('./config.js');
 var cofy = require('cofy');
 var tmp = require('tmp');
 var poiUtils = require('./poi-utils.js');
+var urljoin = require('url-join');
 
 var jsonizeRetailer = function *(retailer) {
 	return _.assign(retailer.toJSON(), {
@@ -51,7 +52,17 @@ router.get('/list', function *(next) {
 		this.body = {
 			data: nearbyPOIList.map(function (poi) {
 				return _.assign(poi.bundle, {
-					distance: poi.distance,
+					poi: {
+						lng: poi.lng,
+						lat: poi.lat,
+						addr: poi.addr,
+						distance: poi.distance,
+					},
+					pic: {
+						path: poi.bundle.picPath,
+						url: urljoin(config.get('site'), poi.bundle.picPath),
+					},
+					spuCnt: poi.bundle.spuList.length,
 				});
 			})
 		};

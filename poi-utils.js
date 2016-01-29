@@ -8,7 +8,7 @@ var makeQuadTree = function () {
 	var quadTree;
 	return function * () {
 		if (!quadTree) {
-			var retailers = casing.camelize(yield knex('TB_RETAILER').join('poi', 'TB_RETAILER.poi_id', 'poi.id').select('TB_RETAILER.*', 'poi.lng', 'poi.lat'));
+			var retailers = casing.camelize(yield knex('TB_RETAILER').join('poi', 'TB_RETAILER.poi_id', 'poi.id').select('TB_RETAILER.*', 'poi.lng', 'poi.lat', 'poi.addr'));
 			retailers = yield retailers.map(function (retailer) {
 				return function *() {
 					var spuList = casing.camelize(yield knex('TB_SPU').join('retailer_spu', 'TB_SPU.id', 'retailer_spu.spu_id').join('TB_RETAILER', 'TB_RETAILER.id', 'retailer_spu.retailer_id').where('TB_RETAILER.id', retailer.id).select('TB_SPU.*'));
@@ -20,7 +20,8 @@ var makeQuadTree = function () {
 			quadTree = new QuadTree(retailers.map(function (retailer) {
 				return _.assign({
 					lng: retailer.lng,
-					lat: retailer.lat
+					lat: retailer.lat,
+					addr: retailer.addr,
 				}, {
 					bundle: retailer,
 				});

@@ -2,13 +2,7 @@ var _ = require('lodash');
 var mercator = require('./mercator.js');
 
 function QuadTree(pois) {
-	this.pois = pois.map(function (poi) {
-		return {
-			lng: poi.lng,
-			lat: poi.lat,
-			bundle: poi.bundle,
-		};
-	});
+	this.pois = pois;
 };
 
 QuadTree.prototype.nearest = function (lnglat, distance, filter) {
