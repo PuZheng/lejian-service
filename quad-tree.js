@@ -11,8 +11,9 @@ function QuadTree(pois) {
 	});
 };
 
-QuadTree.prototype.nearest = function (lnglat, distance) {
+QuadTree.prototype.nearest = function (lnglat, distance, filter) {
 	// TODO this is a naive implementation
+
 	distance = distance || Infinity;
 
 	return _(this.pois).map(function (poi) {
@@ -22,7 +23,8 @@ QuadTree.prototype.nearest = function (lnglat, distance) {
 			distance: distance,
 		});
 	}).filter(function (poi) {
-		return poi.distance < distance;
+		return (poi.distance < distance) &&
+			(!filter || filter(poi));
 	}).sortBy('distance').value();
 };
 

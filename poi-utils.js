@@ -31,8 +31,8 @@ var makeQuadTree = function () {
 	};
 }();
 
-var nearbyPOIList = function * (p, distance) {
-	return (yield makeQuadTree()).nearest(p, distance);
+var nearbyPOIList = function * (p, distance, filter) {
+	return (yield makeQuadTree()).nearest(p, distance, filter);
 };
 
 var nearbySPUList = function * (p, distance, filter) {
