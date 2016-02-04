@@ -178,25 +178,26 @@ if (require.main === module) {
             let vendorId = yield genVendor();
             for (let j = 0; j < chance.integer({ min: 1, max: argv.q? 8: 96 }); ++j) {
                 let spuId = yield genSPU(vendorId, spuTypes);
-                for (var retailer of _.sample(retailers, chance.integer({ min: 1, max: 50 }))) {
-                    yield knex('retailer_spu').insert({
-                        spu_id: spuId,
-                        retailer_id: retailer.id
-                    });
-                }
-                for (let m = 0; m < (argv.q? 1: chance.integer({ min: 100, max: 200 })); ++m) {
+                yield knex('retailer_spu').insert(_.sample(retailers, chance.integer({ min: 1, max: 50 })).map(
+                    function (retailer) {
+                        return {
+                            spu_id: spuId,
+                            retailer_id: retailer.id
+                        };
+                    }));
+                for (let m = 0; m < (argv.q? 1: chance.integer({ min: 10, max: 20 })); ++m) {
                     var skuData = _.times(chance.integer({ min: 50, max: 100 }), fakeSKUData(spuId));
                     yield knex.insert(skuData).into('TB_SKU');
                 }
-				for (let m = 0; m < chance.integer({ min: 1, max: 10 }); ++m) {
-					yield knex('comment').insert({
-						spu_id: spuId,
-						user_id: _.sample(users).id,
-						created_at: moment(chance.date({ year: new Date().getFullYear() - chance.integer({ min: 0, max: 3 }) })).format('YYYY-MM-DD HH:mm:ss'),
-						content: chance.paragraph(),
-						rating: chance.integer({ min: 1, max: 5 }),
-					})
-				}
+                yield knex('comment').insert(_.times(chance.integer({ min: 1, max: 10 }), function () {
+                    return {
+                        spu_id: spuId,
+                        user_id: _.sample(users).id,
+                        created_at: moment(chance.date({ year: new Date().getFullYear() - chance.integer({ min: 0, max: 3 }) })).format('YYYY-MM-DD HH:mm:ss'),
+                        content: chance.paragraph(),
+                        rating: chance.integer({ min: 1, max: 5 }),
+                    }
+                }));
             }
         }
     }).then(function () {

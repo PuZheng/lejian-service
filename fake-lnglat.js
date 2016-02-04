@@ -4,7 +4,7 @@ var _ = require('lodash');
 var bounds = [
     // a block of area in HangZhou
     {
-        weight: 100,
+        weight: 1,
         ne: {
             lng: 120.279919,
             lat: 30.300651
@@ -16,7 +16,7 @@ var bounds = [
     },
     // a block of area in BeiJing
     {
-        weight: 100,
+        weight: 1,
         ne: {
             lng: 116.496674,
             lat: 39.955216,
@@ -24,6 +24,18 @@ var bounds = [
         sw: {
             lng: 116.296517,
             lat: 39.863043,
+        }
+    },
+    // a block of area in NinXia
+    {
+        weight: 1,
+        ne: {
+            lng: 106.429499,
+            lat: 38.550496,
+        },
+        sw: {
+            lng: 106.229499,
+            lat: 38.350496,
         }
     },
     // a huge area in china
