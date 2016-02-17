@@ -94,6 +94,15 @@ router.get('/list', function *(next) {
     item = yield item.save(casing.snakeize(this.request.body));
     this.body = item.toJSON();
     yield next;
+}).get('/verify/:token', function *(next) {
+    var item = yield models.SKU.forge({ token: this.params.token }).fetch({ withRelated: ['spu'] });
+    if (!item) {
+        this.status = 404;
+        return;
+    }
+    item = yield item.save(casing.snakeize(this.request.body));
+    this.body = item.toJSON();
+    yield next;
 });
 
 exports.app = koa().use(json()).use(router.routes()).use(router.allowedMethods());
