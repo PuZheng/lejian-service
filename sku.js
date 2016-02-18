@@ -8,6 +8,9 @@ var cofy = require('cofy');
 var knex = require('./knex.js');
 var bookshelf = require('bookshelf')(knex);
 var koaBody = require('koa-body')();
+var spu = require('./spu.js');
+var poiUtils = require('./poi-utils.js');
+var config = require('./config.js');
 
 router.get('/list', function *(next) {
     var model = models.SKU;
@@ -95,12 +98,22 @@ router.get('/list', function *(next) {
     this.body = item.toJSON();
     yield next;
 }).get('/verify/:token', function *(next) {
-    var item = yield models.SKU.forge({ token: this.params.token }).fetch({ withRelated: ['spu'] });
+    var item = yield models.SKU.forge({ token: this.params.token }).fetch();
     if (!item) {
         this.status = 404;
         return;
     }
     this.body = item.toJSON();
+
+	var lnglat = this.query.lnglat && function (p) {
+		return {
+			lng: parseFloat(p[0]),
+			lat: parseFloat(p[1])
+		};
+	}(this.query.lnglat.split(','));
+    var spuItem = yield models.SPU.forge({ id: item.get('spu_id') }).fetch({ withRelated: [ 'retailerList', 'vendor' ] });
+    var nearbySPUs = lnglat && (yield poiUtils.nearbySPUList(lnglat, this.query.distance || config.get('nearbyLimit')));
+    this.body.spu = yield spu.jsonizeSPU(spuItem, this.state && this.state.user, nearbySPUs);
     yield item.save({ verify_count: parseInt(item.get('verify_count')) + 1 })
     yield next;
 });
