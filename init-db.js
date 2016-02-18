@@ -78,7 +78,15 @@ var initDB = function (knex) {
 		table.string('content');
         table.integer('rating');
         table.timestamp('created_at').defaultTo(knex.fn.now());
-	});
+	}).createTable('denounce', function (table) {
+        table.increments();
+		table.integer('user_id').notNullable().references('TB_USER.id');
+        table.string('token');
+        table.string('reason');
+        table.float('lng');
+        table.float('lat');
+        table.timestamp('created_at').defaultTo(knex.fn.now());
+    });
 };
 
 module.exports = initDB;

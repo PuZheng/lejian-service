@@ -166,7 +166,14 @@ var Comment = bookshelf.Model.extend({
 	spu: function () {
 		return this.belongsTo(SPU, 'spu_id');
 	}
-})
+});
+
+var Denounce = bookshelf.Model.extend({
+    tableName: 'denounce',
+    serialize: function () {
+        return casing.camelize(bookshelf.Model.prototype.serialize.apply(this));
+    },
+});
 
 module.exports = {
     SPUType: SPUType,
@@ -177,4 +184,5 @@ module.exports = {
     Retailer: Retailer,
     POI: POI,
 	Comment: Comment,
+    Denounce: Denounce,
 };
