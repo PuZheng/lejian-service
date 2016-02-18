@@ -100,8 +100,8 @@ router.get('/list', function *(next) {
         this.status = 404;
         return;
     }
-    item = yield item.save(casing.snakeize(this.request.body));
     this.body = item.toJSON();
+    yield item.save({ verify_count: parseInt(item.get('verify_count')) + 1 })
     yield next;
 });
 

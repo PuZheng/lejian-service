@@ -7,6 +7,7 @@ var bcrypt = require('bcrypt');
 var path = require('path');
 var walk = require('co-walk');
 var _ = require('lodash');
+var moment = require('moment');
 
 var SPUType = bookshelf.Model.extend({
     tableName: 'TB_SPU_TYPE',
@@ -113,7 +114,10 @@ var Vendor = bookshelf.Model.extend({
 var SKU = bookshelf.Model.extend({
     tableName: 'TB_SKU',
     serialize: function () {
-        return casing.camelize(bookshelf.Model.prototype.serialize.apply(this));
+        var ret = casing.camelize(bookshelf.Model.prototype.serialize.apply(this));
+        ret.productionDate = moment(new Date(ret.productionDate)).format('YYYY-MM-DD');
+        ret.expireDate = moment(new Date(ret.expireDate)).format('YYYY-MM-DD');
+        return ret;
     },
     spu: function () {
         return this.belongsTo(SPU, 'spu_id');
