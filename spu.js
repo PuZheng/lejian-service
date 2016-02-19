@@ -61,6 +61,7 @@ router.get('/list', function *(next) {
 	var model = models.SPU.query(function (q) {
 		query.vendorId && q.where('vendor_id', query.vendorId);
 		query.spuTypeId && q.where('spu_type_id', query.spuTypeId);
+        query.enabled && q.where('enabled', parseInt(query.enabled) === 1);
 		query.rating && q.where('rating', query.rating);
 		query.kw && q.where(function () {
 			this.where('name', 'like', '%%' + query.kw + '%%').orWhere('code', 'like', '%%' + query.kw + '%%');
@@ -80,7 +81,8 @@ router.get('/list', function *(next) {
 	if (query.sortBy.startsWith('distance.asc')) {
 		var totalCount = yield model.count();
 
-		var nearbySPUs = yield poiUtils.nearbySPUList(lnglat, query.distance, function spuFilter(vendorId, spuTypeId, rating, kw) {
+		var nearbySPUs = yield poiUtils.nearbySPUList(lnglat, query.distance, 
+                                                      function spuFilter(vendorId, spuTypeId, rating, kw, enabled) {
 			if (kw) {
 				kw = new RegExp(kw, 'i');
 			}
@@ -88,9 +90,10 @@ router.get('/list', function *(next) {
 				return (!vendorId || spu.vendorId == vendorId)
 				&& (!spuTypeId || spu.spuTypeId == spuTypeId)
 				&& (!rating || spu.raing == rating)
+                && (!enabled || spu.enabled == (parseInt(enabled) === 1))
 				&& (!kw || spu.name.match(kw) || spu.code.match(kw));
 			};
-		}(query.vendorId, query.spuTypeId, query.rating, query.kw));
+		}(query.vendorId, query.spuTypeId, query.rating, query.kw, query.enabled));
 
 		var c = yield models.SPU.where('id', 'in', function (spus) {
 			var ret = Array.from(spus.keys());
