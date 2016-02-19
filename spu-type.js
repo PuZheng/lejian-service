@@ -20,7 +20,11 @@ var _jsonify = function *(spuType) {
 };
 
 router.get('/list', function *(next) {
-    var c = (yield models.SPUType.fetchAll());
+    var query = this.query;
+    var c = (yield models.SPUType.query(function (q) {
+        query.enabled && q.where('enabled', parseInt(query.enabled) === 1);
+    }).fetchAll());
+    
     var data = (yield c.map(function (spuType) {
 		return _jsonify(spuType);
     }));

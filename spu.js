@@ -189,7 +189,7 @@ router.get('/list', function *(next) {
 	}(this.query.lnglat.split(','));
     try {
         var item = yield models.SPU.forge({ id: this.params.id }).fetch({ require: true, withRelated: [ 'retailerList' ] });
-		this.body = jsonizeSPU(item, this.state.user, lnglat && poiUtils.nearbySPUList(lnglat, config.get('nearbyLimit')));
+		this.body = yield jsonizeSPU(item, this.state.user, lnglat && poiUtils.nearbySPUList(lnglat, config.get('nearbyLimit')));
     } catch (e) {
         if (e.message != 'EmptyResponse') {
             throw e;
