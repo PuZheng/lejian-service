@@ -1,7 +1,6 @@
-#! /usr/bin/env node
 var fs = require('fs');
 
-function clearDB(knex) {
+function clearDB() {
     fs.unlink('./db', function (err) {
         if (err) {
             if (err.code != 'ENOENT') {
