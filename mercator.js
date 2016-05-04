@@ -8,7 +8,7 @@ var truncateLnglat = function (lng, lat) {
 		lng = -180.0;
 	}
     if (lat > 90.0) {
-        lng = 90.0;
+        lat = 90.0;
 	} else if (lat < -90.0) {
         lat = -90.0;
 	}
